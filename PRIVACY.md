@@ -65,4 +65,4 @@ Material changes to this policy will be published in this repository and, where 
 
 For privacy questions, open an issue at the project's GitHub repository:
 
-https://github.com/anikethana2109-maker/one-swagger-v2/issues
+https://github.com/anikethana21/one-swagger-v2/issues
