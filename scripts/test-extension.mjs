@@ -1,0 +1,90 @@
+/**
+ * Smoke-tests the built Chrome extension in a real Chromium profile:
+ * the MV3 service worker must load, the app must open as an extension page,
+ * and a request to an API without CORS headers must succeed through the
+ * service-worker proxy.
+ *
+ *   npm run build
+ *   node scripts/test-extension.mjs
+ */
+import { chromium } from '@playwright/test';
+import { spawn } from 'node:child_process';
+import { mkdirSync, rmSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = fileURLToPath(new URL('.', import.meta.url));
+const root = resolve(here, '..');
+const extensionPath = resolve(root, 'dist');
+const profile = resolve(root, '.extension-profile');
+const apiOrigin = 'http://127.0.0.1:4010';
+
+async function apiReady() {
+  try {
+    const response = await fetch(`${apiOrigin}/health`);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+let mockApi = null;
+if (!(await apiReady())) {
+  mockApi = spawn(process.execPath, ['tests/api/server.mjs'], { cwd: root, stdio: 'ignore' });
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if (await apiReady()) break;
+    await new Promise((resolveWait) => setTimeout(resolveWait, 150));
+  }
+  if (!(await apiReady())) throw new Error('The mock API did not start on port 4010.');
+}
+
+rmSync(profile, { recursive: true, force: true });
+mkdirSync(profile, { recursive: true });
+
+const context = await chromium.launchPersistentContext(profile, {
+  channel: 'chromium',
+  headless: true,
+  args: [
+    `--disable-extensions-except=${extensionPath}`,
+    `--load-extension=${extensionPath}`,
+  ],
+});
+
+const errors = [];
+try {
+  let [worker] = context.serviceWorkers();
+  if (!worker) worker = await context.waitForEvent('serviceworker', { timeout: 20000 });
+  const extensionId = new URL(worker.url()).host;
+  console.log('Service worker:', worker.url());
+
+  const page = await context.newPage();
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(
+    `chrome-extension://${extensionId}/index.html?url=${encodeURIComponent('http://127.0.0.1:4010/specs/fastapi.json')}`,
+  );
+  await page.getByTestId('spec-title').waitFor({ timeout: 20000 });
+  console.log('Loaded spec:', await page.getByTestId('spec-title').textContent());
+
+  // Normal request through the extension page.
+  await page.getByTestId('operation-get-/pets').click();
+  await page.getByTestId('send-get-/pets').click();
+  await page.locator('.status-pill').waitFor({ timeout: 15000 });
+  console.log('Docs request status:', await page.locator('.status-pill').textContent());
+
+  // This endpoint sends no CORS headers, which proves the service-worker proxy.
+  await page.getByTestId('nav-request').click();
+  await page.getByTestId('composer-url').fill('http://127.0.0.1:4010/no-cors');
+  await page.getByTestId('composer-send').click();
+  await page.locator('.status-pill').waitFor({ timeout: 15000 });
+  console.log('CORS-free request status:', await page.locator('.status-pill').textContent());
+  const body = await page.locator('.response').textContent();
+  if (!body?.includes('proxied')) throw new Error('The proxied response was not rendered.');
+  console.log('Proxied body rendered:', body.includes('No CORS headers'));
+
+  if (errors.length) throw new Error(`Page errors: ${errors.join(' | ')}`);
+  console.log('Extension smoke test passed.');
+} finally {
+  await context.close();
+  rmSync(profile, { recursive: true, force: true });
+  if (mockApi) mockApi.kill();
+}

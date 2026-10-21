@@ -1,0 +1,106 @@
+# Chrome Web Store listing
+
+Copy and assets for the One Swagger Chrome Web Store submission.
+
+## Basic details
+
+| Field | Value |
+| --- | --- |
+| Name | One Swagger |
+| Version | 2.0.0 |
+| Category | Developer Tools |
+| Language | English (United States) |
+| Homepage | https://github.com/anikethana2109-maker/one-swagger-v2 |
+| Support | https://github.com/anikethana2109-maker/one-swagger-v2/issues |
+| Privacy policy | https://github.com/anikethana2109-maker/one-swagger-v2/blob/main/PRIVACY.md |
+| Package | `one-swagger-extension.zip` |
+
+### Short description (132 character limit)
+
+> Read any OpenAPI or Swagger document and send requests from the same clean page. Zero-CORS execution for any API.
+
+### Detailed description
+
+> **Read the docs. Send the request.**
+>
+> One Swagger turns any OpenAPI or Swagger document into clean, readable API documentation — and lets you execute every endpoint from the same page. No account, no collections, no context switching.
+>
+> **Works with every stack**
+> Load OpenAPI 3.1, 3.0 and Swagger 2.0 documents from FastAPI, Express, Spring Boot, Flask, Django REST Framework, NestJS, ASP.NET Core, Go and any other framework that produces a spec. Load by URL, drag and drop a file, or paste JSON/YAML.
+>
+> **Documentation that stays out of the way**
+> Familiar Swagger UI / FastAPI-style layout with tags, method-colored endpoint cards, parameter tables, request bodies, response schemas and an expandable schema browser. Filter endpoints instantly. Switch servers or edit the base URL.
+>
+> **An API client built into the page**
+> Open an endpoint, fill in path, query and header parameters, edit the generated request body and press Send. Inspect status, latency, response size, headers and formatted JSON. Copy or download the response.
+>
+> **Request console**
+> Need something outside the spec? The Request tab is a free-form HTTP console with query parameters, headers, JSON, form, multipart text and plain-text bodies.
+>
+> **Authorization**
+> Bearer tokens, Basic auth, API keys, OAuth 2.0 token exchange and OpenID Connect tokens. Credentials stay in your browser and are applied automatically to operations that declare them.
+>
+> **Zero-CORS**
+> The extension's background service worker sends requests without browser CORS restrictions. This also applies to OAuth token endpoints, making localhost and locked-down APIs work from one place.
+>
+> **History and code generation**
+> Every request is recorded locally and can be replayed, searched, exported or deleted. Generate code in cURL, JavaScript, Axios, Python, Go, PHP, Ruby, Java, C#, HTTPie or PowerShell.
+>
+> **Private by design**
+> No sign-in, no analytics, no developer-operated proxy, no remote code. Requests go only to the URLs you choose.
+
+## Permission justifications
+
+| Permission | Justification |
+| --- | --- |
+| `tabs` | Open or focus the full-tab app and use the current tab's origin when launching from the toolbar, so the app can look for that site's OpenAPI document. |
+| `sidePanel` | Provide the optional side-panel version of the app. |
+| Host permission `<all_urls>` | The extension is a general-purpose API client. Users choose arbitrary local (`localhost`) and remote API/spec URLs, so the host cannot be predicted in advance. It is used only for user-initiated spec loads and HTTP requests. |
+
+### Does the extension use remote code?
+
+No. All JavaScript and CSS are bundled in the package. It does not load scripts from a CDN or remote server.
+
+### Single purpose
+
+Read OpenAPI/Swagger documentation and execute HTTP requests against the APIs the user selects.
+
+## Data usage disclosures
+
+- The extension does **not** collect or transmit personal data to the developer.
+- It stores the user's theme, recent spec URLs, drafts, history and API credentials locally in the browser profile.
+- Request content and credentials are sent only to the API URL selected by the user.
+- No analytics, tracking, advertising or sale of data.
+- The privacy policy URL above must be entered in the Web Store dashboard.
+
+## Assets
+
+All paths are relative to the repository root.
+
+| Asset | Size | Path |
+| --- | --- | --- |
+| Store icon | 128×128 | `public/icons/icon128.png` |
+| Screenshot 1 — landing | 1280×800 | `store-assets/01-landing.png` |
+| Screenshot 2 — documentation | 1280×800 | `store-assets/02-docs.png` |
+| Screenshot 3 — run request | 1280×800 | `store-assets/03-run-request.png` |
+| Screenshot 4 — request console | 1280×800 | `store-assets/04-request-console.png` |
+| Screenshot 5 — dark mode | 1280×800 | `store-assets/05-dark-mode.png` |
+| Small promo tile | 440×280 | `store-assets/promo-tile-440x280.png` |
+| Marquee promo image | 1400×560 | `store-assets/promo-marquee-1400x560.png` |
+
+## Submission checklist
+
+1. `npm ci`
+2. `npm run test:all`
+3. `npm run package:extension`
+4. Verify the zip contains `manifest.json` at its root.
+5. Upload `one-swagger-extension.zip` in the Chrome Web Store developer dashboard.
+6. Add screenshots, promo tile, privacy policy URL, support URL and the permission justifications above.
+7. Submit for review.
+
+## Reviewer notes
+
+- Load the extension, click the toolbar icon, and enter `https://petstore3.swagger.io/api/v3/openapi.json` — or a local URL such as `http://127.0.0.1:8000/openapi.json`.
+- The **Request** tab accepts any HTTP URL.
+- Credentials are optional. No account is needed to test any feature.
+- The optional development mock API (`npm run api`) is not part of the extension package.
