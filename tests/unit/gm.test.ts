@@ -5,18 +5,24 @@ import { getGmBridge, getStorageBridge, isUserScriptMode } from '../../src/lib/g
 
 const bridgeKey = '__ONE_SWAGGER_GM_REQUEST__';
 const storageKey = '__ONE_SWAGGER_STORAGE__';
+const shadowKey = '__ONE_SWAGGER_SHADOW_ROOT__';
 
 afterEach(() => {
   delete (globalThis as Record<string, unknown>)[bridgeKey];
   delete (globalThis as Record<string, unknown>)[storageKey];
+  delete (globalThis as Record<string, unknown>)[shadowKey];
 });
 
 describe('userscript bridge', () => {
-  it('detects the zero-CORS request bridge', () => {
+  it('detects the zero-CORS request bridge without confusing it for the userscript overlay', () => {
     expect(getGmBridge()).toBeNull();
     expect(isUserScriptMode()).toBe(false);
+
     (globalThis as Record<string, unknown>)[bridgeKey] = async () => ({});
     expect(getGmBridge()).toBeTypeOf('function');
+    expect(isUserScriptMode()).toBe(false);
+
+    (globalThis as Record<string, unknown>)[shadowKey] = {};
     expect(isUserScriptMode()).toBe(true);
   });
 

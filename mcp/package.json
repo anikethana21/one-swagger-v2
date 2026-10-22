@@ -1,0 +1,50 @@
+{
+  "name": "one-swagger-mcp",
+  "version": "0.1.0",
+  "description": "MCP server that opens One Swagger in a browser and gives AI agents a zero-CORS OpenAPI console.",
+  "type": "module",
+  "bin": {
+    "one-swagger-mcp": "./server.mjs"
+  },
+  "files": [
+    "server.mjs",
+    "README.md",
+    "LICENSE",
+    "dist/index.html",
+    "dist/assets/**",
+    "dist/icons/**",
+    "dist/theme-init.js",
+    "skill/**"
+  ],
+  "scripts": {
+    "start": "node server.mjs",
+    "prepack": "node ../scripts/package-mcp.mjs --quiet"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "openapi",
+    "swagger",
+    "api",
+    "testing",
+    "ai-agents"
+  ],
+  "homepage": "https://github.com/anikethana21/one-swagger-v2#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anikethana21/one-swagger-v2.git",
+    "directory": "mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/anikethana21/one-swagger-v2/issues"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  }
+}

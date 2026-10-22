@@ -46,7 +46,9 @@ export function getStorageBridge(): StorageBridge | null {
 }
 
 export function isUserScriptMode(): boolean {
-  return Boolean(getGmBridge()) || Boolean((globalThis as Record<string, unknown>).__ONE_SWAGGER_SHADOW_ROOT__);
+  // A GM bridge can also be injected by the local MCP browser server. Only
+  // the shadow root means the app is living inside the userscript overlay.
+  return Boolean((globalThis as Record<string, unknown>).__ONE_SWAGGER_SHADOW_ROOT__);
 }
 
 export function getUserScriptHost(): HTMLElement | null {

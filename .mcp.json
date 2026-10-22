@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "one-swagger": {
+      "command": "node",
+      "args": ["mcp/server.mjs"]
+    }
+  }
+}

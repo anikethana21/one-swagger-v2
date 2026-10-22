@@ -53,10 +53,19 @@ curl -i http://127.0.0.1:8011/status/503
 3. Open a `/docs` page. One Swagger detects the spec origin automatically.
 4. Expand `GET /status/{code}`, enter `418` (or any code above), and press **Send**.
 
+You can also open the live spec through the MCP server without installing anything:
+
+```bash
+node mcp/server.mjs open http://127.0.0.1:8010/openapi.json --operation "GET /status/{code}"
+```
+
+That opens a browser tab with the operation already expanded. Enter `418`, `422`, `503` or another code and press **Send**.
+
 Run the automated checks with:
 
 ```bash
-npm run test:demos
+npm run test:demos   # live FastAPI + Java, every status code, userscript UI
+npm run test:mcp     # MCP client, local browser page, deep link and zero-CORS bridge
 ```
 
-This verifies every status code in both languages, both OpenAPI documents, and a live `418` response through the userscript UI.
+`test:demos` verifies every status code in both languages, both OpenAPI documents, and a live `418` response through the userscript UI.

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Code2, Loader2, Lock, Send, ShieldCheck } from 'lucide-react';
 import type { ApiOperation } from '../types';
 import { useApp } from '../state/AppContext';
@@ -61,6 +61,8 @@ export const OperationCard: React.FC<OperationCardProps> = ({ operation, tagName
     resolver,
     servers,
     activeServer,
+    focusOperation,
+    clearFocusOperation,
     credentials,
     openAuth,
     openCode,
@@ -77,6 +79,28 @@ export const OperationCard: React.FC<OperationCardProps> = ({ operation, tagName
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<Awaited<ReturnType<typeof executeRequest>> | null>(null);
   const [error, setError] = useState<ResponseError | null>(null);
+
+  // Deep links such as ?operation=GET%20%2Fpets open the matching endpoint.
+  useEffect(() => {
+    if (!focusOperation) return;
+    const wanted = focusOperation.trim().toLowerCase().replace(/\s+/g, ' ');
+    const method = operation.method.toLowerCase();
+    const path = operation.path.toLowerCase();
+    const matches = wanted === `${method} ${path}`
+      || wanted === `${method}:${path}`
+      || wanted === operation.key.toLowerCase();
+    if (!matches) return;
+
+    setOpen(true);
+    clearFocusOperation();
+    const id = `op-${operation.key.replace(/[^\w-]/g, '-')}`;
+    const timer = window.setTimeout(() => {
+      const host = document.getElementById('one-swagger-userscript-host');
+      const target = document.getElementById(id) || host?.shadowRoot?.getElementById(id);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [focusOperation, operation, clearFocusOperation]);
 
   const security = operation.security ?? spec?.security;
   const securityNames = useMemo(

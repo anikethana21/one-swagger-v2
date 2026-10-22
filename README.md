@@ -48,6 +48,7 @@ Swagger UI is excellent at reading docs. Postman is excellent at sending request
 ### Browser surfaces
 - **Chrome extension:** full-tab experience opened by the toolbar button. A Manifest V3 service worker proxies API traffic and spec loading without CORS restrictions. Optional side-panel build target.
 - **Tampermonkey userscript:** injects the same app into a shadow root on any page. `GM_xmlhttpRequest` provides the zero-CORS transport, and specs are auto-detected on Swagger UI / FastAPI `/docs` pages.
+- **MCP for AI agents:** a local server opens a normal browser tab with One Swagger, deep-links an operation, and injects the same zero-CORS bridge. No extension or userscript is needed in this mode.
 - No remote code, analytics or external service. Requests go only to the URL you choose.
 
 ## Screenshots
@@ -128,6 +129,35 @@ npm run test:userscript    # real Chromium + GM bridge + no-CORS request
 
 The userscript uses `GM_xmlhttpRequest` for zero-CORS requests and Tampermonkey storage for theme, recent specs, credentials and history across sites. It also works when a page's own CSP would block an injected iframe, because the app runs in a shadow root rather than a nested document.
 
+## Use from AI agents (MCP + Skill)
+
+One Swagger ships an **MCP server** and an **Agent Skill**. When a developer asks a coding agent to "open the API docs" or "check this endpoint", the agent can start One Swagger, open a browser tab with the spec loaded, expand the requested operation, and send CORS-free requests. The browser tab is a normal tab; this mode does not need the extension or userscript.
+
+```bash
+npm install
+npm run build
+node mcp/server.mjs open http://127.0.0.1:8010/openapi.json
+```
+
+The command starts a loopback-only app server, opens the default browser and prints the app URL. Use `Ctrl+C` to stop it. The MCP server exposes four tools:
+
+| Tool | Purpose |
+| --- | --- |
+| `open_swagger` | Open a spec in the browser and optionally expand an operation. |
+| `inspect_spec` | Summarize a JSON/YAML OpenAPI 2.0, 3.0 or 3.1 document. |
+| `http_request` | Send a CORS-free request and return status, headers and body. |
+| `close_swagger` | Stop the local app/proxy server. |
+
+Example agent prompts:
+
+- "Open the FastAPI demo docs, expand `GET /status/{code}`, and send `418`."
+- "Inspect the OpenAPI document at `http://127.0.0.1:8010/openapi.json` and test `GET /secure` with and without the bearer token."
+- "Open my local spec file and put the app URL in the chat."
+
+Configure the server in Claude Code, Claude Desktop, OpenCode, Cursor or VS Code with [`mcp/README.md`](mcp/README.md). This checkout already includes `.mcp.json` for Claude Code and `opencode.json` for OpenCode, so an agent opened in the repository can use the server immediately. The skill is at [`.claude/skills/one-swagger/SKILL.md`](.claude/skills/one-swagger/SKILL.md); copy its `one-swagger` folder into `.claude/skills/`, `.agents/skills/` or your agent's skills directory.
+
+The package is prepared as `one-swagger-mcp`. Build the publishable folder with `npm run package:mcp`, then publish it with `npm publish ./mcp` once you are logged in to npm.
+
 ## Demo APIs
 
 Two runnable examples make status-code testing easy:
@@ -162,7 +192,7 @@ A normal browser tab can only read a response when the API allows the page origi
 2. `background/service-worker.js` performs `fetch()` with the user's method, headers and body.
 3. The service worker returns the status, headers, body and timing to the app.
 
-The same route is used for spec documents and OAuth token requests. The userscript has an equivalent path: `GM_xmlhttpRequest` performs the request outside the page's CORS sandbox, and the app receives the status, headers, body and timing. In the web build, One Swagger first tries a direct `fetch()`, then the Vite development proxy (`npm run dev`). A clear CORS explanation is shown if none of these paths can reach the API.
+The same route is used for spec documents and OAuth token requests. The userscript has an equivalent path: `GM_xmlhttpRequest` performs the request outside the page's CORS sandbox, and the app receives the status, headers, body and timing. The MCP server provides a third path: it serves the web build from a loopback-only server, injects the same bridge into the page, and proxies requests through Node's `fetch` using a random per-process token. In the web build, One Swagger first tries a direct `fetch()`, then the Vite development proxy (`npm run dev`). A clear CORS explanation is shown if none of these paths can reach the API.
 
 ## Supported frameworks
 
@@ -193,13 +223,16 @@ npm test                 # Vitest unit tests
 npm run test:e2e         # Playwright browser tests
 npm run test:extension   # Real Chromium MV3 + zero-CORS smoke test
 npm run test:userscript  # Tampermonkey bundle + GM bridge smoke test
+npm run test:mcp         # MCP client + browser page + zero-CORS bridge
 npm run test:demos       # FastAPI and Java demo APIs + userscript UI
+npm run mcp              # Start the MCP stdio server from this checkout
+npm run package:mcp      # Build the publishable one-swagger-mcp package
 npm run build:userscript # Generate one-swagger.user.js
-npm run test:all         # unit + web/userscript builds + e2e + extension + userscript
+npm run test:all         # unit + web/userscript builds + e2e + extension + userscript + MCP
 npm run fixtures         # Regenerate framework fixtures
 ```
 
-The tests use Node's built-in HTTP server, Playwright Chromium and Vitest. `npm run test:e2e` starts the mock API automatically; the extension and userscript tests start it if it is not already running. `npm run test:demos` starts the FastAPI and Java demos when they are not already running.
+The tests use Node's built-in HTTP server, Playwright Chromium and Vitest. `npm run test:e2e` starts the mock API automatically; the extension, userscript and MCP tests start it if it is not already running. `npm run test:demos` starts the FastAPI and Java demos when they are not already running.
 
 ### Project layout
 
@@ -210,18 +243,20 @@ src/
     spec/            parsing, Swagger 2 conversion, $ref resolution, examples
     request.ts       request building and operation preparation
     transport.ts     direct fetch, dev proxy, extension and userscript transport
-    gm.ts            userscript bridge detection and storage helpers
+    gm.ts            userscript/MCP bridge detection and storage helpers
     auth.ts          credential application and OAuth token exchange
     codegen.ts       code generation for 11 targets
     storage.ts       local/Tampermonkey persistence
   state/AppContext.tsx
   userscript-entry.tsx  shadow-root entry point for the userscript bundle
 extension/background.js   MV3 service worker
+mcp/                      MCP stdio server and publishable npm package
+.claude/skills/one-swagger/  Agent Skill for MCP-aware coding agents
 demos/                    live FastAPI and Java status-code APIs
 tests/api/                mock API and framework fixtures
 tests/unit/               parser, request, auth, bridge and codegen tests
 e2e/                      browser coverage and screenshot generation
-scripts/                  extension/userscript/demo smoke tests, packaging, assets
+scripts/                  extension/userscript/MCP/demo smoke tests, packaging, assets
 one-swagger.user.js       generated Tampermonkey bundle
 ```
 
@@ -230,6 +265,7 @@ one-swagger.user.js       generated Tampermonkey bundle
 - No account, backend or analytics.
 - Credentials, history, theme and drafts are stored in the browser's local storage for the current profile.
 - Requests are sent directly to the API URL you enter, or through the extension service worker / userscript `GM_xmlhttpRequest` when those surfaces are installed.
+- The MCP server binds only to `127.0.0.1`. Its browser bridge requires a random per-process token, and it stops when the MCP process exits.
 - The extension requests `<all_urls>` and the userscript runs on all sites because the user chooses arbitrary API and spec URLs. Neither collects or transmits browsing data.
 - Always review a spec before authorizing it. Treat tokens as secrets.
 

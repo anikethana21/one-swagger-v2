@@ -71,6 +71,8 @@ interface AppContextValue {
   servers: Array<{ url: string; description?: string }>;
   activeServer: string;
   setActiveServer: (url: string) => void;
+  focusOperation: string | null;
+  clearFocusOperation: () => void;
   credentials: CredentialMap;
   setCredentials: (credentials: CredentialMap) => void;
   authOpen: boolean;
@@ -131,6 +133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const [credentials, setCredentialsState] = useState<CredentialMap>({});
   const [serverOverride, setServerOverrideState] = useState<string | null>(null);
+  const [focusOperation, setFocusOperation] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [codeModal, setCodeModal] = useState<CodeModalState | null>(null);
@@ -176,7 +179,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSource(loaded.source);
     setError(null);
     setCredentialsState(loadCredentials(key));
-    setServerOverrideState(loadServerOverride(key));
+    if (!isUserScriptMode()) {
+      const params = new URLSearchParams(window.location.search);
+      const serverParam = params.get('server');
+      if (serverParam) {
+        // MCP and other launchers can override the spec's server for this tab.
+        setServerOverrideState(serverParam);
+        saveServerOverride(key, serverParam);
+      } else {
+        setServerOverrideState(loadServerOverride(key));
+      }
+      setFocusOperation(params.get('operation'));
+    } else {
+      setServerOverrideState(loadServerOverride(key));
+    }
     saveSource(loaded.source);
     if (!options.keepView) setView('docs');
     if (!isUserScriptMode()) document.title = `One Swagger — ${loaded.spec.title}`;
@@ -288,6 +304,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setServerOverrideState(url);
     if (specKey) saveServerOverride(specKey, url || null);
   }, [specKey]);
+
+  const clearFocusOperation = useCallback(() => setFocusOperation(null), []);
 
   const updateComposerDraft = useCallback((draft: RequestDraft) => {
     setComposerDraft(draft);
@@ -435,6 +453,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     servers,
     activeServer,
     setActiveServer,
+    focusOperation,
+    clearFocusOperation,
     credentials,
     setCredentials,
     authOpen,

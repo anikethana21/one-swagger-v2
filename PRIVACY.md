@@ -25,6 +25,7 @@ One Swagger sends requests only to URLs that you enter or that are declared as s
 - The web build uses `fetch()` from the page.
 - The Chrome extension sends requests through its Manifest V3 service worker so that APIs without CORS headers can still be used.
 - The Tampermonkey userscript sends requests through `GM_xmlhttpRequest` for the same zero-CORS behaviour.
+- The MCP server serves the app from a loopback-only address and proxies requests through Node's `fetch` on your machine.
 - OAuth token exchange uses the same request path as the active browser surface.
 
 The developer of One Swagger does not receive, log or sell these requests or their contents. There is no proxy server controlled by the developer.
@@ -51,6 +52,13 @@ The extension injects no content scripts, loads no remote code and makes no requ
 - It uses `@connect *` because the user chooses arbitrary API and specification URLs.
 - It stores settings and history with `GM_getValue` / `GM_setValue`, or browser local storage if Tampermonkey storage is unavailable.
 - It injects the app into an isolated shadow root. It does not modify the page's DOM outside that overlay.
+
+## MCP server
+
+- The MCP server is a local process started by your AI agent. It binds only to `127.0.0.1` and serves the built One Swagger app to your browser.
+- The page receives a random per-process token for the local request proxy. The token is not stored on disk and changes when the server restarts.
+- Requests are sent from your machine to the API URL you or the agent chose. There is no One Swagger proxy server controlled by the developer.
+- The server stops when the MCP process exits or when `close_swagger` is called. It does not write request data to disk.
 
 ## Data retention and deletion
 

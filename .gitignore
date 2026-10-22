@@ -7,6 +7,12 @@ dist-userscript/
 demos/java/bin/
 *.zip
 
+# MCP package staging (created by npm run package:mcp)
+mcp/dist/
+mcp/LICENSE
+mcp/skill/
+mcp/*.tgz
+
 # Python demo caches
 __pycache__/
 *.pyc

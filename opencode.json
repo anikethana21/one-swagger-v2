@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "one-swagger": {
+      "type": "local",
+      "command": ["node", "mcp/server.mjs"],
+      "enabled": true
+    }
+  }
+}
