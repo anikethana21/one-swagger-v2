@@ -89,6 +89,28 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (path === '/protected/openapi.json') {
+    if (!authorized(req)) {
+      json(res, 401, { detail: 'A bearer token is required to read this spec.' });
+      return;
+    }
+    try {
+      const content = await readFile(resolve(fixtures, 'fastapi.json'), 'utf8');
+      const document = JSON.parse(content);
+      document.info = { ...(document.info || {}), title: 'Protected FastAPI Demo' };
+      const body = JSON.stringify(document, null, 2);
+      res.writeHead(200, {
+        ...CORS,
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Length': Buffer.byteLength(body),
+      });
+      res.end(body);
+    } catch (error) {
+      json(res, 500, { detail: String(error) });
+    }
+    return;
+  }
+
   if (path === '/openapi.json' || path === '/swagger.json') {
     try {
       const content = await readFile(resolve(fixtures, 'fastapi.json'), 'utf8');

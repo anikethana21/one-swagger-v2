@@ -7,7 +7,7 @@ Copy and assets for the One Swagger Chrome Web Store submission.
 | Field | Value |
 | --- | --- |
 | Name | One Swagger |
-| Version | 2.0.0 |
+| Version | 2.1.0 |
 | Category | Developer Tools |
 | Language | English (United States) |
 | Homepage | https://github.com/anikethana21/one-swagger-v2 |
@@ -41,7 +41,10 @@ Copy and assets for the One Swagger Chrome Web Store submission.
 > Bearer tokens, Basic auth, API keys, OAuth 2.0 token exchange and OpenID Connect tokens. Credentials stay in your browser and are applied automatically to operations that declare them.
 >
 > **Zero-CORS**
-> The extension's background service worker sends requests without browser CORS restrictions. This also applies to OAuth token endpoints, making localhost and locked-down APIs work from one place.
+> The extension's background service worker sends requests without browser CORS restrictions. This also applies to OAuth token endpoints and protected spec documents launched with a header, making localhost and locked-down APIs work from one place.
+>
+> **Launch your way**
+> Click the toolbar icon for a compact popup, open the API shown in your current tab, or type `os 8010` in the address bar to jump straight to a local API. The same field accepts a full spec URL or `-H "Authorization: Bearer ..."` for a protected document.
 >
 > **History and code generation**
 > Every request is recorded locally and can be replayed, searched, exported or deleted. Generate code in cURL, JavaScript, Axios, Python, Go, PHP, Ruby, Java, C#, HTTPie or PowerShell.
@@ -53,7 +56,8 @@ Copy and assets for the One Swagger Chrome Web Store submission.
 
 | Permission | Justification |
 | --- | --- |
-| `tabs` | Open or focus the full-tab app and use the current tab's origin when launching from the toolbar, so the app can look for that site's OpenAPI document. |
+| `tabs` | Open or focus the full-tab app and let the toolbar popup use the current tab's origin, so the app can look for that site's OpenAPI document. |
+| `storage` | Keep a protected spec's one-time launch headers in session storage for at most two minutes. General settings, credentials and history stay in local browser storage. |
 | `sidePanel` | Provide the optional side-panel version of the app. |
 | Host permission `<all_urls>` | The extension is a general-purpose API client. Users choose arbitrary local (`localhost`) and remote API/spec URLs, so the host cannot be predicted in advance. It is used only for user-initiated spec loads and HTTP requests. |
 
@@ -69,6 +73,7 @@ Read OpenAPI/Swagger documentation and execute HTTP requests against the APIs th
 
 - The extension does **not** collect or transmit personal data to the developer.
 - It stores the user's theme, recent spec URLs, drafts, history and API credentials locally in the browser profile.
+- Protected-spec launch headers are kept in session storage for up to two minutes and are not written to disk.
 - Request content and credentials are sent only to the API URL selected by the user.
 - No analytics, tracking, advertising or sale of data.
 - The privacy policy URL above must be entered in the Web Store dashboard.
@@ -100,7 +105,9 @@ All paths are relative to the repository root.
 
 ## Reviewer notes
 
-- Load the extension, click the toolbar icon, and enter `https://petstore3.swagger.io/api/v3/openapi.json` — or a local URL such as `http://127.0.0.1:8000/openapi.json`.
+- Load the extension and click the toolbar icon. The popup can open the full app, open the current tab's API, or quick-launch a port/spec URL.
+- Enter `https://petstore3.swagger.io/api/v3/openapi.json` — or a local URL such as `http://127.0.0.1:8000/openapi.json`.
+- In the address bar, type `os`, press **Space**, then `8010` to launch `http://127.0.0.1:8010`. A full URL and `-H "Authorization: Bearer ..."` are also accepted.
 - The **Request** tab accepts any HTTP URL.
 - Credentials are optional. No account is needed to test any feature.
 - The optional development mock API (`npm run api`) is not part of the extension package.

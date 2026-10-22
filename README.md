@@ -46,7 +46,7 @@ Swagger UI is excellent at reading docs. Postman is excellent at sending request
 - Local persistence for theme, recent specs, composer drafts, credentials and history.
 
 ### Browser surfaces
-- **Chrome extension:** full-tab experience opened by the toolbar button. A Manifest V3 service worker proxies API traffic and spec loading without CORS restrictions. Optional side-panel build target.
+- **Chrome extension:** a toolbar popup with one-click launch, current-tab detection and a port/spec quick-open field. The full-tab app uses a Manifest V3 service worker for zero-CORS API traffic and spec loading. An `os` address-bar keyword opens a spec directly. Optional side-panel build target.
 - **Tampermonkey userscript:** injects the same app into a shadow root on any page. `GM_xmlhttpRequest` provides the zero-CORS transport, and specs are auto-detected on Swagger UI / FastAPI `/docs` pages.
 - **MCP for AI agents:** a local server opens a normal browser tab with One Swagger, deep-links an operation, and injects the same zero-CORS bridge. No extension or userscript is needed in this mode.
 - No remote code, analytics or external service. Requests go only to the URL you choose.
@@ -85,7 +85,28 @@ The web build is in `dist/`. The same folder is also a loadable Chrome extension
 2. Open `chrome://extensions/`.
 3. Enable **Developer mode**.
 4. Click **Load unpacked** and select the `dist` folder.
-5. Pin **One Swagger** and click its toolbar icon.
+5. Pin **One Swagger** and click its toolbar icon. The popup opens with **Open One Swagger**, an **Open this API** button when the current tab is a web page, and a port/spec quick-open field.
+
+### Launch shortcuts
+
+- **Toolbar popup:** click the icon, then **Open One Swagger** for a new/focused app tab, or **Open this API** to use the current tab's origin.
+- **Address bar:** type `os`, press **Space** or **Tab**, then enter a port, host or spec URL.
+
+  ```text
+  os 8010
+  os localhost:8010
+  os https://petstore3.swagger.io/api/v3/openapi.json
+  ```
+
+- **Protected specs:** add `-H "Name: Value"` to the address-bar or popup input. The MV3 service worker fetches the spec with that header, so CORS does not block it.
+
+  ```text
+  os 8010 -H "Authorization: Bearer demo-token"
+  ```
+
+  The header is kept only in `chrome.storage.session` for two minutes and is not written to disk. Prefer the popup for long-lived secrets because address-bar input may remain in Chrome's omnibox history.
+
+The quick-open field accepts the same syntax as the address bar. A bare port such as `8010` is treated as `http://127.0.0.1:8010`; the app then tries the usual `/openapi.json`, `/swagger.json`, `/v3/api-docs` and framework docs locations.
 
 ### Package for the Chrome Web Store
 
@@ -192,7 +213,7 @@ A normal browser tab can only read a response when the API allows the page origi
 2. `background/service-worker.js` performs `fetch()` with the user's method, headers and body.
 3. The service worker returns the status, headers, body and timing to the app.
 
-The same route is used for spec documents and OAuth token requests. The userscript has an equivalent path: `GM_xmlhttpRequest` performs the request outside the page's CORS sandbox, and the app receives the status, headers, body and timing. The MCP server provides a third path: it serves the web build from a loopback-only server, injects the same bridge into the page, and proxies requests through Node's `fetch` using a random per-process token. In the web build, One Swagger first tries a direct `fetch()`, then the Vite development proxy (`npm run dev`). A clear CORS explanation is shown if none of these paths can reach the API.
+The same route is used for spec documents (including the one-time headers from the popup or `os` address-bar launch) and OAuth token requests. The userscript has an equivalent path: `GM_xmlhttpRequest` performs the request outside the page's CORS sandbox, and the app receives the status, headers, body and timing. The MCP server provides a third path: it serves the web build from a loopback-only server, injects the same bridge into the page, and proxies requests through Node's `fetch` using a random per-process token. In the web build, One Swagger first tries a direct `fetch()`, then the Vite development proxy (`npm run dev`). A clear CORS explanation is shown if none of these paths can reach the API.
 
 ## Supported frameworks
 
@@ -221,7 +242,7 @@ npm run dev              # Vite dev server + CORS proxy
 npm run api              # Mock API on http://127.0.0.1:4010
 npm test                 # Vitest unit tests
 npm run test:e2e         # Playwright browser tests
-npm run test:extension   # Real Chromium MV3 + zero-CORS smoke test
+npm run test:extension   # Real Chromium MV3 + popup/omnibox + zero-CORS smoke test
 npm run test:userscript  # Tampermonkey bundle + GM bridge smoke test
 npm run test:mcp         # MCP client + browser page + zero-CORS bridge
 npm run test:demos       # FastAPI and Java demo APIs + userscript UI
@@ -250,6 +271,10 @@ src/
   state/AppContext.tsx
   userscript-entry.tsx  shadow-root entry point for the userscript bundle
 extension/background.js   MV3 service worker
+extension/omnibox.js      popup / address-bar target parser
+public/popup.html          toolbar popup
+public/popup.css
+public/popup.js
 mcp/                      MCP stdio server and publishable npm package
 .claude/skills/one-swagger/  Agent Skill for MCP-aware coding agents
 demos/                    live FastAPI and Java status-code APIs
@@ -264,6 +289,7 @@ one-swagger.user.js       generated Tampermonkey bundle
 
 - No account, backend or analytics.
 - Credentials, history, theme and drafts are stored in the browser's local storage for the current profile.
+- One-time spec headers from the popup or `os` launch are stored in `chrome.storage.session` for two minutes and are not written to disk.
 - Requests are sent directly to the API URL you enter, or through the extension service worker / userscript `GM_xmlhttpRequest` when those surfaces are installed.
 - The MCP server binds only to `127.0.0.1`. Its browser bridge requires a random per-process token, and it stops when the MCP process exits.
 - The extension requests `<all_urls>` and the userscript runs on all sites because the user chooses arbitrary API and spec URLs. Neither collects or transmits browsing data.

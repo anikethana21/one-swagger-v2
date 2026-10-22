@@ -70,6 +70,7 @@ const copyExtensionFiles = () => ({
     const background = resolve(dist, 'background');
     if (!existsSync(background)) mkdirSync(background, { recursive: true });
     copyFileSync(resolve(import.meta.dirname, 'extension', 'background.js'), resolve(background, 'service-worker.js'));
+    copyFileSync(resolve(import.meta.dirname, 'extension', 'omnibox.js'), resolve(background, 'omnibox.js'));
   },
 });
 

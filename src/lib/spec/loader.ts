@@ -60,6 +60,15 @@ export async function fetchTextFromUrl(url: string, headers?: Record<string, str
       }
     });
     if (response?.success && response.data) {
+      const status = Number(response.data.status || 0);
+      if (status && (status < 200 || status >= 300)) {
+        const body = String(response.data.rawText || '').slice(0, 140);
+        const error = new Error(
+          `HTTP ${status} ${response.data.statusText || ''}${body ? ` - ${body}` : ''}`,
+        ) as Error & { status?: number };
+        error.status = status;
+        throw error;
+      }
       return {
         text: String(response.data.rawText ?? ''),
         finalUrl: response.data.finalUrl || url,
@@ -113,8 +122,14 @@ export async function fetchTextFromUrl(url: string, headers?: Record<string, str
   throw error;
 }
 
-async function withDevProxy(url: string): Promise<{ text: string; finalUrl: string; contentType: string }> {
-  const response = await fetch(`/__cors_proxy?url=${encodeURIComponent(url)}`, { credentials: 'omit' });
+async function withDevProxy(
+  url: string,
+  headers?: Record<string, string>,
+): Promise<{ text: string; finalUrl: string; contentType: string }> {
+  const response = await fetch(`/__cors_proxy?url=${encodeURIComponent(url)}`, {
+    credentials: 'omit',
+    headers: headers || {},
+  });
   if (!response.ok) {
     throw new Error(`Proxy returned HTTP ${response.status}.`);
   }
@@ -125,15 +140,18 @@ async function withDevProxy(url: string): Promise<{ text: string; finalUrl: stri
   };
 }
 
-export async function fetchSpecText(url: string): Promise<{ text: string; finalUrl: string }> {
+export async function fetchSpecText(
+  url: string,
+  headers?: Record<string, string>,
+): Promise<{ text: string; finalUrl: string }> {
   try {
-    const result = await fetchTextFromUrl(url);
+    const result = await fetchTextFromUrl(url, headers);
     return { text: result.text, finalUrl: result.finalUrl };
   } catch (directError: any) {
     // Browser builds can fall back to the Vite dev proxy. Extension builds use
     // the service worker above. This also makes CORS-blocked specs work in dev.
     try {
-      const result = await withDevProxy(url);
+      const result = await withDevProxy(url, headers);
       return { text: result.text, finalUrl: result.finalUrl };
     } catch {
       throw directError;
@@ -239,7 +257,10 @@ function candidateUrls(input: string): string[] {
  * Load a spec from a URL. Framework docs URLs are accepted as well: when the
  * given URL is a Swagger UI page or a bare origin, common spec paths are tried.
  */
-export async function loadSpecFromUrl(input: string): Promise<LoadedSpec> {
+export async function loadSpecFromUrl(
+  input: string,
+  headers?: Record<string, string>,
+): Promise<LoadedSpec> {
   const candidates = candidateUrls(input);
   const attempts: string[] = [];
   let lastError: Error | null = null;
@@ -247,7 +268,7 @@ export async function loadSpecFromUrl(input: string): Promise<LoadedSpec> {
 
   for (const url of candidates) {
     try {
-      const result = await fetchSpecText(url);
+      const result = await fetchSpecText(url, headers);
       attempts.push(`✓ ${url}`);
       firstSuccessfulText = result;
       const spec = parseSpecText(result.text);
@@ -290,6 +311,34 @@ export async function loadSpecFromText(text: string, label: string, url?: string
       url,
     },
   };
+}
+
+/**
+ * Read the one-time headers saved by the extension popup/omnibox. They are
+ * kept in chrome.storage.session (memory-backed) and expire after two minutes.
+ */
+export async function readLaunchSpecHeaders(
+  key: string | null | undefined,
+): Promise<Record<string, string> | undefined> {
+  if (!key || !isChromeExtension()) return undefined;
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (headers?: Record<string, string>) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve(headers);
+    };
+    const timer = setTimeout(() => finish(undefined), 2000);
+    try {
+      chrome.runtime.sendMessage({ type: 'GET_SPEC_HEADERS', key }, (result: any) => {
+        if (chrome.runtime?.lastError) finish(undefined);
+        else finish(result?.headers && typeof result.headers === 'object' ? result.headers : undefined);
+      });
+    } catch {
+      finish(undefined);
+    }
+  });
 }
 
 export async function detectSpecOnCurrentTab(): Promise<{ ok: boolean; url?: string; error?: string }> {

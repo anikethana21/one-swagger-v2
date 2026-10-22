@@ -10,7 +10,7 @@ import type {
   SpecSource,
   Theme,
 } from '../types';
-import { loadSpecFromText, loadSpecFromUrl, SpecLoadError } from '../lib/spec/loader';
+import { loadSpecFromText, loadSpecFromUrl, readLaunchSpecHeaders, SpecLoadError } from '../lib/spec/loader';
 import type { LoadedSpec } from '../lib/spec/loader';
 import { resolverFor } from '../lib/spec/parse';
 import {
@@ -90,7 +90,7 @@ interface AppContextValue {
   composerDraft: RequestDraft;
   updateComposerDraft: (draft: RequestDraft) => void;
   loadHistoryIntoComposer: (entry: HistoryEntry) => void;
-  loadUrl: (url: string) => Promise<void>;
+  loadUrl: (url: string, headers?: Record<string, string>) => Promise<void>;
   loadText: (text: string, label: string) => Promise<void>;
   loadFile: (file: File) => Promise<void>;
   reload: () => Promise<void>;
@@ -149,6 +149,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const requestId = useRef(0);
   const booted = useRef(false);
+  const specHeadersRef = useRef(new Map<string, Record<string, string>>());
 
   const specKey = specKeyOf(source, spec);
   const resolver = useMemo(() => (spec ? resolverFor(spec) : null), [spec]);
@@ -219,15 +220,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
-  const loadUrl = useCallback(async (url: string) => {
+  const loadUrl = useCallback(async (url: string, headers?: Record<string, string>) => {
     const id = requestId.current + 1;
     requestId.current = id;
     setLoading(true);
     setError(null);
     setView('docs');
     try {
-      const loaded = await loadSpecFromUrl(url);
+      const loaded = await loadSpecFromUrl(url, headers);
       if (requestId.current !== id) return;
+      if (headers) {
+        // Remember launch headers so the reload button works for a protected spec.
+        specHeadersRef.current.set(loaded.source.value, headers);
+        if (loaded.source.url) specHeadersRef.current.set(loaded.source.url, headers);
+      }
       applyLoaded(loaded);
     } catch (loadError) {
       if (requestId.current !== id) return;
@@ -268,7 +274,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setLoading(true);
     try {
-      const loaded = await loadSpecFromUrl(source.url);
+      const headers = specHeadersRef.current.get(source.url) || specHeadersRef.current.get(source.value);
+      const loaded = await loadSpecFromUrl(source.url, headers);
       applyLoaded(loaded, { keepView: true });
       notify('Spec reloaded.', 'success');
     } catch (loadError) {
@@ -291,6 +298,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setError(null);
     setCredentialsState({});
     setServerOverrideState(null);
+    specHeadersRef.current.clear();
     saveSource(null);
     if (!isUserScriptMode()) document.title = 'One Swagger — API docs you can run';
   }, []);
@@ -401,14 +409,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isUserScriptMode()) return;
     const params = new URLSearchParams(window.location.search);
     const urlParam = params.get('url');
+    const specHeadersKey = params.get('specHeadersKey');
+    const loadInitial = async (target: string) => {
+      const headers = await readLaunchSpecHeaders(specHeadersKey);
+      await loadUrl(target, headers);
+    };
     if (urlParam) {
-      void loadUrl(urlParam);
+      void loadInitial(urlParam);
       return;
     }
     const from = params.get('from');
     if (from) {
       try {
-        void loadUrl(new URL(from).origin);
+        void loadInitial(new URL(from).origin);
         return;
       } catch {
         /* fall through */

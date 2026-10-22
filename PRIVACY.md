@@ -1,6 +1,6 @@
 # Privacy Policy - One Swagger
 
-**Last updated: 22 October 2026**
+**Last updated: 23 October 2026**
 
 One Swagger is a local-first OpenAPI documentation viewer and HTTP request console. It does not require an account and does not include analytics, advertising, telemetry or a remote backend.
 
@@ -15,6 +15,7 @@ The app stores the following for the current browser profile:
 - API credentials you explicitly enter (Bearer tokens, Basic credentials, API keys, OAuth access tokens).
 - Request history (method, URL, status, timing, response size, request headers, request body and a short response preview).
 - Per-spec base URL overrides.
+- One-time headers used to open a protected specification from the toolbar popup or address-bar keyword. These are kept in `chrome.storage.session` for at most two minutes and are not written to disk.
 
 The Chrome extension uses browser local storage. The Tampermonkey userscript uses Tampermonkey storage so the same history and settings are available across sites. This data never leaves your device except when it is included in a request you explicitly send to an API. For example, an Authorization header is sent to the API that you chose to call.
 
@@ -35,12 +36,13 @@ The developer of One Swagger does not receive, log or sell these requests or the
 - No names, email addresses, accounts or passwords for One Swagger itself.
 - No analytics, crash reporting or usage statistics.
 - No advertising identifiers.
-- No browsing history beyond the current tab URL that the extension uses when you click its toolbar button.
+- No browsing history beyond the current tab URL that the extension reads when you open its popup or ask it to open that tab's API.
 - No data sold or shared with third parties.
 
 ## Chrome extension permissions
 
-- **tabs / active tab URL:** opens or focuses the One Swagger tab and can use the current page's origin to find a specification.
+- **tabs:** opens or focuses the One Swagger tab and lets the popup use the current page's origin to find a specification.
+- **storage:** stores the one-time headers for a protected spec in session storage for up to two minutes. General settings, credentials and history remain in browser local storage.
 - **sidePanel:** provides the optional side-panel view.
 - **Host permissions for all URLs (`<all_urls>`):** required because the user chooses arbitrary local or remote API and specification URLs.
 
@@ -67,6 +69,7 @@ All stored data is local to your browser profile.
 - Use **Clear history** in the History drawer to delete request history.
 - Use **Clear all** in the Authorize dialog to remove stored API credentials.
 - Use **Close** on the current spec card to stop remembering the last spec URL.
+- One-time spec headers expire after two minutes and are cleared when the browser session ends.
 - Removing the extension, removing the userscript, or clearing its stored data removes all of its local storage.
 
 ## Children's privacy

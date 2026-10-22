@@ -1,8 +1,13 @@
 /* One Swagger - MV3 service worker
- * Two jobs: open the app in a full tab, and perform CORS-free fetches for it.
+ * Opens the app from the popup/omnibox, stores one-time spec headers, and
+ * performs CORS-free fetches for the app.
  */
+import { buildAppUrl, parseTarget, suggestionsFor } from './omnibox.js';
 
 const APP_URL = chrome.runtime.getURL('index.html');
+const SPEC_HEADER_PREFIX = 'oneswagger.specHeaders.';
+const SPEC_HEADER_TTL_MS = 2 * 60 * 1000;
+const memorySpecHeaders = new Map();
 
 chrome.runtime.onInstalled.addListener(() => {
   try {
@@ -12,15 +17,108 @@ chrome.runtime.onInstalled.addListener(() => {
   }
 });
 
-chrome.action.onClicked.addListener(async (tab) => {
-  const tabs = await chrome.tabs.query({ url: APP_URL + '*' });
-  if (tabs.length > 0) {
-    await chrome.tabs.update(tabs[0].id, { active: true });
-    await chrome.windows.update(tabs[0].windowId, { focused: true });
-    return;
+function randomKey() {
+  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
   }
-  const query = tab && tab.url ? `?from=${encodeURIComponent(tab.url)}` : '';
-  await chrome.tabs.create({ url: APP_URL + query });
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function storeSpecHeaders(headers) {
+  if (!headers || Object.keys(headers).length === 0) return null;
+  const key = randomKey();
+  const entry = { headers, expiresAt: Date.now() + SPEC_HEADER_TTL_MS };
+  if (chrome.storage && chrome.storage.session) {
+    await chrome.storage.session.set({ [SPEC_HEADER_PREFIX + key]: entry });
+  } else {
+    memorySpecHeaders.set(key, entry);
+  }
+  return key;
+}
+
+async function readSpecHeaders(key) {
+  if (!key) return null;
+  if (chrome.storage && chrome.storage.session) {
+    const storageKey = SPEC_HEADER_PREFIX + key;
+    const items = await chrome.storage.session.get(storageKey);
+    const entry = items && items[storageKey];
+    if (!entry) return null;
+    if (entry.expiresAt < Date.now()) {
+      await chrome.storage.session.remove(storageKey);
+      return null;
+    }
+    return entry.headers;
+  }
+  const entry = memorySpecHeaders.get(key);
+  if (!entry) return null;
+  memorySpecHeaders.delete(key);
+  return entry.expiresAt < Date.now() ? null : entry.headers;
+}
+
+async function focusExistingApp() {
+  const tabs = await chrome.tabs.query({ url: APP_URL + '*' });
+  if (tabs.length === 0) return false;
+  const tab = tabs[0];
+  try {
+    await chrome.tabs.update(tab.id, { active: true });
+    await chrome.windows.update(tab.windowId, { focused: true });
+  } catch (_) {
+    /* the tab may have closed between query and update */
+  }
+  return true;
+}
+
+/**
+ * @param {{target?: string, headers?: Record<string,string>, disposition?: string, reuse?: boolean}} options
+ */
+async function openApp({ target = '', headers = {}, disposition = 'newForegroundTab', reuse = false } = {}) {
+  const headersKey = await storeSpecHeaders(headers);
+  const appUrl = buildAppUrl(APP_URL, target, { specHeadersKey: headersKey });
+
+  if (reuse && (await focusExistingApp())) {
+    return { ok: true, url: appUrl, reused: true };
+  }
+
+  if (disposition === 'currentTab') {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tab && tab.id) {
+      try {
+        await chrome.tabs.update(tab.id, { url: appUrl });
+        return { ok: true, url: appUrl };
+      } catch (_) {
+        /* chrome:// and similar pages cannot be navigated; fall through */
+      }
+    }
+  }
+
+  await chrome.tabs.create({
+    url: appUrl,
+    active: disposition !== 'newBackgroundTab',
+  });
+  return { ok: true, url: appUrl };
+}
+
+async function openInput(input, { disposition = 'newForegroundTab' } = {}) {
+  const parsed = parseTarget(input);
+  return openApp({
+    target: parsed.target,
+    headers: parsed.headers,
+    disposition,
+  });
+}
+
+chrome.omnibox.onInputChanged.addListener((text, suggest) => {
+  suggest(suggestionsFor(text));
+});
+
+chrome.omnibox.onInputEntered.addListener((text, disposition) => {
+  // Keep the user's page intact: an address-bar launch opens a foreground tab
+  // unless Chrome explicitly asks for a background tab.
+  openInput(text, {
+    disposition: disposition === 'newBackgroundTab' ? 'newBackgroundTab' : 'newForegroundTab',
+  }).catch((error) => {
+    console.error('[One Swagger] Could not open the address-bar target:', error);
+  });
 });
 
 function parseBody(text, contentType) {
@@ -106,6 +204,24 @@ async function detectSpec() {
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message && message.type === 'OPEN_APP') {
+    openApp({ reuse: true })
+      .then((result) => sendResponse(result))
+      .catch((error) => sendResponse({ ok: false, error: error.message || 'Could not open One Swagger' }));
+    return true;
+  }
+  if (message && message.type === 'OPEN_INPUT') {
+    openInput(message.input, { disposition: message.disposition || 'newForegroundTab' })
+      .then((result) => sendResponse(result))
+      .catch((error) => sendResponse({ ok: false, error: error.message || 'Could not open One Swagger' }));
+    return true;
+  }
+  if (message && message.type === 'GET_SPEC_HEADERS') {
+    readSpecHeaders(message.key)
+      .then((headers) => sendResponse({ headers }))
+      .catch(() => sendResponse({ headers: null }));
+    return true;
+  }
   if (message && message.type === 'FETCH_PROXY') {
     proxyFetch(message.payload)
       .then((data) => sendResponse({ success: true, data }))
