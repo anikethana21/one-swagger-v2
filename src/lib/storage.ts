@@ -1,4 +1,5 @@
 import type { Credential, RecentSpec, SpecSource, Theme } from '../types';
+import { getStorageBridge } from './gm';
 
 const KEYS = {
   theme: 'oneswagger.theme',
@@ -17,9 +18,59 @@ export function hashKey(value: string): string {
   return (hash >>> 0).toString(36);
 }
 
+function readRaw(key: string): string | null {
+  const bridge = getStorageBridge();
+  if (bridge) {
+    try {
+      return bridge.get(key);
+    } catch {
+      /* fall back to localStorage */
+    }
+  }
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeRaw(key: string, value: string): void {
+  const bridge = getStorageBridge();
+  if (bridge) {
+    try {
+      bridge.set(key, value);
+      return;
+    } catch {
+      /* fall back to localStorage */
+    }
+  }
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* storage full or unavailable */
+  }
+}
+
+function removeRaw(key: string): void {
+  const bridge = getStorageBridge();
+  if (bridge) {
+    try {
+      bridge.remove(key);
+      return;
+    } catch {
+      /* fall back to localStorage */
+    }
+  }
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
 function read<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = readRaw(key);
     if (!raw) return fallback;
     return JSON.parse(raw) as T;
   } catch {
@@ -28,16 +79,12 @@ function read<T>(key: string, fallback: T): T {
 }
 
 function write(key: string, value: unknown): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* storage full or unavailable */
-  }
+  writeRaw(key, JSON.stringify(value));
 }
 
 export function loadTheme(): Theme {
   try {
-    const raw = localStorage.getItem(KEYS.theme);
+    const raw = readRaw(KEYS.theme);
     if (raw === 'light' || raw === 'dark' || raw === 'system') return raw;
     // Tolerate an older build that stored the value as JSON.
     if (raw) {
@@ -51,11 +98,7 @@ export function loadTheme(): Theme {
 }
 
 export function saveTheme(theme: Theme): void {
-  try {
-    localStorage.setItem(KEYS.theme, theme);
-  } catch {
-    /* ignore */
-  }
+  writeRaw(KEYS.theme, theme);
 }
 
 export function loadSource(): SpecSource | null {
@@ -66,22 +109,14 @@ export function loadSource(): SpecSource | null {
 
 export function saveSource(source: SpecSource | null): void {
   if (!source) {
-    try {
-      localStorage.removeItem(KEYS.source);
-    } catch {
-      /* ignore */
-    }
+    removeRaw(KEYS.source);
     return;
   }
   if (source.kind === 'url') {
     write(KEYS.source, { kind: 'url', value: source.value, label: source.label, url: source.url });
   } else {
     // File and pasted specs are intentionally session-only.
-    try {
-      localStorage.removeItem(KEYS.source);
-    } catch {
-      /* ignore */
-    }
+    removeRaw(KEYS.source);
   }
 }
 

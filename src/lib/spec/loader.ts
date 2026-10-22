@@ -2,6 +2,7 @@ import { parse as parseYaml } from 'yaml';
 import type { ParsedSpec, SpecSource } from '../../types';
 import { parseSpec } from './parse';
 import type { RawObject } from './normalize';
+import { getGmBridge } from '../gm';
 
 declare const chrome: any;
 
@@ -66,6 +67,32 @@ export async function fetchTextFromUrl(url: string, headers?: Record<string, str
       };
     }
     throw new Error(response?.error || 'Extension proxy request failed.');
+  }
+
+  const gm = getGmBridge();
+  if (gm) {
+    const response = await gm({
+      url,
+      method: 'GET',
+      headers: {
+        Accept: 'application/json, application/yaml, text/yaml, text/plain, */*',
+        ...(headers || {}),
+      },
+      timeoutMs: 30000,
+    });
+    if (response.status >= 200 && response.status < 300) {
+      return {
+        text: String(response.rawText ?? ''),
+        finalUrl: response.finalUrl || url,
+        contentType: response.headers?.['content-type'] || '',
+      };
+    }
+    const body = String(response.rawText || '').slice(0, 140);
+    const error = new Error(
+      `HTTP ${response.status} ${response.statusText || ''}${body ? ` - ${body}` : ''}`,
+    ) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
   }
 
   const direct = await fetch(url, {
@@ -242,7 +269,7 @@ export async function loadSpecFromUrl(input: string): Promise<LoadedSpec> {
 
   const hint = firstSuccessfulText
     ? 'A document was returned but it could not be parsed as OpenAPI.'
-    : 'Check that the server is running and that the spec path is correct. In Chrome, install the extension for zero-CORS access.';
+    : 'Check that the server is running and that the spec path is correct. Install the Chrome extension or Tampermonkey userscript for zero-CORS access.';
   throw new SpecLoadError(
     `Could not load an OpenAPI document from ${input}.`,
     hint,

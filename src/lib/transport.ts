@@ -1,4 +1,5 @@
 import type { HttpResponseResult } from '../types';
+import { getGmBridge } from './gm';
 
 declare const chrome: any;
 
@@ -92,6 +93,34 @@ async function proxyRequest(prepared: TransportRequest): Promise<HttpResponseRes
   return response.data as HttpResponseResult;
 }
 
+async function userscriptRequest(prepared: TransportRequest): Promise<HttpResponseResult> {
+  const bridge = getGmBridge();
+  if (!bridge) throw new RequestExecutionError('proxy', 'The userscript request bridge is unavailable.');
+  const started = performance.now();
+  try {
+    const response = await bridge({
+      url: prepared.url,
+      method: prepared.method,
+      headers: prepared.headers,
+      body: prepared.bodyText,
+      timeoutMs: 90000,
+    });
+    return toResult(
+      started,
+      response.rawText || '',
+      response.status,
+      response.statusText || '',
+      response.headers || {},
+      response.finalUrl || prepared.url,
+    );
+  } catch (error: any) {
+    if (/timed?\s*out|timeout/i.test(error?.message || '')) {
+      throw new RequestExecutionError('timeout', 'The request timed out after 90 seconds.');
+    }
+    throw new RequestExecutionError('network', error?.message || 'The userscript request failed.', String(error));
+  }
+}
+
 async function directRequest(prepared: TransportRequest): Promise<HttpResponseResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60000);
@@ -153,6 +182,10 @@ export async function executeRequest(prepared: TransportRequest): Promise<HttpRe
     }
   }
 
+  if (getGmBridge()) {
+    return userscriptRequest(prepared);
+  }
+
   try {
     return await directRequest(prepared);
   } catch (error: any) {
@@ -172,7 +205,7 @@ export async function executeRequest(prepared: TransportRequest): Promise<HttpRe
           ? 'The browser blocked this request (CORS), or the server could not be reached.'
           : error?.message || 'The request failed.',
         isCors
-          ? 'The Chrome extension sends requests without CORS restrictions. In a browser tab, enable CORS on the API or use the development server.'
+          ? 'The Chrome extension or Tampermonkey userscript sends requests without CORS restrictions. In a plain browser tab, enable CORS on the API or use the development server.'
           : undefined,
       );
     }

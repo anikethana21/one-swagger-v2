@@ -35,6 +35,7 @@ import {
 } from '../lib/storage';
 import { recordToKeyValues } from '../lib/request';
 import type { CredentialMap } from '../lib/auth';
+import { getUserScriptHost, isUserScriptMode } from '../lib/gm';
 
 export type View = 'landing' | 'docs' | 'composer';
 
@@ -178,7 +179,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setServerOverrideState(loadServerOverride(key));
     saveSource(loaded.source);
     if (!options.keepView) setView('docs');
-    document.title = `One Swagger — ${loaded.spec.title}`;
+    if (!isUserScriptMode()) document.title = `One Swagger — ${loaded.spec.title}`;
     if (loaded.source.kind === 'url') {
       setRecent(
         addRecent({
@@ -275,7 +276,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCredentialsState({});
     setServerOverrideState(null);
     saveSource(null);
-    document.title = 'One Swagger — API docs you can run';
+    if (!isUserScriptMode()) document.title = 'One Swagger — API docs you can run';
   }, []);
 
   const setCredentials = useCallback((next: CredentialMap) => {
@@ -342,8 +343,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const dark = theme === 'dark' || (theme === 'system' && media.matches);
       const resolved = dark ? 'dark' : 'light';
       setResolvedTheme(resolved);
-      document.documentElement.dataset.theme = resolved;
-      document.documentElement.style.colorScheme = resolved;
+      const host = getUserScriptHost();
+      if (host) {
+        // The userscript lives in a shadow root. Theme the host instead of
+        // changing the page's own documentElement and CSS variables.
+        host.dataset.theme = resolved;
+        host.style.colorScheme = resolved;
+      } else {
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.style.colorScheme = resolved;
+      }
     };
     apply();
     if (theme === 'system') {
@@ -369,6 +378,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (booted.current) return;
     booted.current = true;
+    // The userscript mounts hidden on every page. Wait for its launcher to
+    // open the app, then load a detected spec or the last spec.
+    if (isUserScriptMode()) return;
     const params = new URLSearchParams(window.location.search);
     const urlParam = params.get('url');
     if (urlParam) {
@@ -387,6 +399,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = loadSource();
     if (saved) void loadUrl(saved.value);
   }, [loadUrl]);
+
+  // The userscript launcher communicates with the hidden app through this
+  // event. A detected spec URL wins; otherwise reopen the last spec.
+  useEffect(() => {
+    if (!isUserScriptMode()) return;
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ url?: string }>).detail;
+      const url = typeof detail?.url === 'string' ? detail.url.trim() : '';
+      if (url) {
+        void loadUrl(url);
+        return;
+      }
+      if (!spec) {
+        const saved = loadSource();
+        if (saved) void loadUrl(saved.value);
+      }
+    };
+    window.addEventListener('one-swagger:open', onOpen);
+    return () => window.removeEventListener('one-swagger:open', onOpen);
+  }, [loadUrl, spec]);
 
   const value: AppContextValue = {
     view,

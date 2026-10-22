@@ -105,6 +105,29 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  if (path === '/docs') {
+    text(
+      res,
+      200,
+      `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>FastAPI Swagger UI</title>
+</head>
+<body>
+  <main>
+    <h1>FastAPI Swagger UI</h1>
+    <p>Mock framework docs page used by the One Swagger browser tests.</p>
+    <a href="/openapi.json">OpenAPI JSON</a>
+  </main>
+</body>
+</html>`,
+      'text/html; charset=utf-8',
+    );
+    return;
+  }
+
   // Swagger 2 fixture base path.
   if (path === '/api/v1/orders' && method === 'GET') {
     json(res, 200, [

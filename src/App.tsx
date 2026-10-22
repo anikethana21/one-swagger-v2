@@ -13,7 +13,10 @@ const App: React.FC = () => {
   const { view, authOpen, codeModal, historyOpen } = useApp();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    const shadowRoot = document.getElementById('one-swagger-userscript-host')?.shadowRoot;
+    const scroller = shadowRoot?.getElementById('root');
+    if (scroller) scroller.scrollTo({ top: 0, behavior: 'auto' });
+    else window.scrollTo({ top: 0, behavior: 'auto' });
   }, [view]);
 
   return (

@@ -3,7 +3,14 @@ node_modules/
 
 # Build output and packaged extensions
 dist/
+dist-userscript/
+demos/java/bin/
 *.zip
+
+# Python demo caches
+__pycache__/
+*.pyc
+.venv/
 
 # Test output
 playwright-report/
