@@ -4,7 +4,7 @@
 
 > **Published on GitHub Pages:** <https://anikethana21.github.io/one-swagger-v2/>
 >
-> [**Install the userscript**](https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js) — free, no store account or payment card. Current version: **2.3.0**.
+> [**Install the userscript**](https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js) — free, no store account or payment card. Current version: **2.3.1**.
 
 One Swagger is a drop-in replacement for the documentation *and* the request runner. Load an OpenAPI 2.0, 3.0 or 3.1 document, browse it like Swagger UI, then execute endpoints inline — with no page switching and no login. The Tampermonkey userscript adds a zero-CORS transport for localhost and APIs that do not send CORS headers. The same app is also hosted on GitHub Pages, and the optional Chrome extension adds a toolbar popup and address-bar launcher.
 
@@ -84,9 +84,9 @@ This is the install path that does not need a Chrome Web Store developer account
 
    <https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js>
 
-3. Start the two demo APIs below in separate terminals.
-4. Open <http://127.0.0.1:8010/docs> or <http://127.0.0.1:8011/docs>, then click the floating **One Swagger** button or press **Alt+Shift+S**. The spec is detected automatically.
-5. Try `GET /status/{code}` with `418`, or `GET /items`.
+3. Start the demo APIs you need below. The authenticated To-Do demo is the best end-to-end test.
+4. Open <http://127.0.0.1:8012/docs>, <http://127.0.0.1:8010/docs> or <http://127.0.0.1:8011/docs>, then click the floating **One Swagger** button or press **Alt+Shift+S**. The spec is detected automatically.
+5. In the To-Do demo, click **Authorize**, use the password flow with `demo` / `demo123`, and try the full CRUD list. For the status demos, try `GET /status/{code}` with `418` or `GET /items`.
 
 The userscript is self-contained: the React app, styles and OpenAPI engine are inside `one-swagger.user.js`. It does not need the extension, a hosted backend or a store listing.
 
@@ -230,23 +230,31 @@ The package is prepared as `one-swagger-mcp`. Build the publishable folder with 
 
 ## Demo APIs
 
-Two runnable examples make status-code testing easy:
+Three runnable examples cover status codes, authentication and full CRUD:
 
-| Demo | Docs | Port |
-| --- | --- | --- |
-| FastAPI | <http://127.0.0.1:8010/docs> | 8010 |
-| Java standard library | <http://127.0.0.1:8011/docs> | 8011 |
+| Demo | Docs | Port | What it tests |
+| --- | --- | --- | --- |
+| To-Do List Auth | <http://127.0.0.1:8012/docs> | 8012 | OAuth 2.0 password flow, roles, CORS, GET/POST/PUT/PATCH/DELETE |
+| FastAPI status codes | <http://127.0.0.1:8010/docs> | 8010 | Every common HTTP status code |
+| Java standard library | <http://127.0.0.1:8011/docs> | 8011 | The same status codes with no framework |
 
-### Start both demos in two terminals
+### Start the demos
 
-Terminal 1 — FastAPI:
+Terminal 1 - authenticated To-Do list:
+
+```bash
+python demos/todo/main.py
+# or: npm run demo:todo
+```
+
+Terminal 2 - FastAPI status codes:
 
 ```bash
 cd demos/fastapi
 python -m uvicorn main:app --host 127.0.0.1 --port 8010
 ```
 
-Terminal 2 — Java:
+Terminal 3 - Java status codes:
 
 ```bash
 cd demos/java
@@ -254,14 +262,32 @@ javac -encoding UTF-8 -d bin OneSwaggerJavaDemo.java
 java -cp bin OneSwaggerJavaDemo 8011
 ```
 
-Then open <http://127.0.0.1:8010/docs> and press **Alt+Shift+S**, or open <http://127.0.0.1:8011/docs> for the Java demo. Both pages auto-detect their OpenAPI document.
+Then open a docs page, press **Alt+Shift+S**, and use the spec. Each page auto-detects its OpenAPI document.
 
-Both expose `GET /status/{code}` for **200, 201, 202, 204, 301, 400, 401, 403, 404, 409, 418, 422, 429, 500, 502, 503**, plus `/codes`, `/items`, `/secure` and `/echo`.
+### Authenticated To-Do demo
 
-Verify both languages, every status code and the userscript UI:
+The To-Do API has two seeded accounts:
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `demo` | `demo123` | user |
+| `admin` | `admin123` | administrator |
+
+Click **Authorize**, open `todoAuth`, enter the account in the password flow and click **Get token**. You can also call `POST /auth/login` with JSON and paste the returned `access_token`.
+
+It implements `GET`, `POST`, `PUT`, `PATCH` and `DELETE` on `/todos`, plus `/todos/{id}/complete`, `/todos/{id}/reopen`, `/todos/stats`, registration, login, logout, admin list/stats/delete, filtering, sorting, pagination, CORS and timing headers. Regular users only see their own list; the admin can see and delete every user's todos.
+
+See [`demos/todo/README.md`](demos/todo/README.md) for the endpoint table and authorization rules.
+
+### Status-code demos
+
+Both status-code demos expose `GET /status/{code}` for **200, 201, 202, 204, 301, 400, 401, 403, 404, 409, 418, 422, 429, 500, 502, 503**, plus `/codes`, `/items`, `/secure` and `/echo`.
+
+Verify the demos and the userscript UI:
 
 ```bash
 npm run test:demos
+npm run test:todo
 ```
 
 See [`demos/README.md`](demos/README.md) for details.
@@ -306,16 +332,18 @@ npm run test:e2e         # Playwright browser tests
 npm run test:extension   # Real Chromium MV3 + popup/omnibox + zero-CORS smoke test
 npm run test:userscript  # Tampermonkey bundle + GM bridge smoke test
 npm run test:mcp         # MCP client + browser page + zero-CORS bridge
-npm run test:demos       # FastAPI and Java demo APIs + userscript UI
+npm run test:demos       # FastAPI and Java status-code demos + userscript UI
+npm run test:todo        # Auth/CRUD/CORS tests + OAuth flow in the userscript UI
+npm run demo:todo        # Start the authenticated To-Do API on port 8012
 npm run mcp              # Start the MCP stdio server from this checkout
 npm run package:mcp      # Build the publishable one-swagger-mcp package
 npm run build:userscript # Generate one-swagger.user.js
 npm run pages:build      # Build dist/ + userscript and assemble docs/ for GitHub Pages
-npm run test:all         # unit + web/userscript builds + e2e + extension + userscript + MCP
+npm run test:all         # unit + web/userscript builds + e2e + extension + userscript + MCP + todo
 npm run fixtures         # Regenerate framework fixtures
 ```
 
-The tests use Node's built-in HTTP server, Playwright Chromium and Vitest. `npm run test:e2e` starts the mock API automatically; the extension, userscript and MCP tests start it if it is not already running. `npm run test:demos` starts the FastAPI and Java demos when they are not already running.
+The tests use Node's built-in HTTP server, Playwright Chromium and Vitest. `npm run test:e2e` starts the mock API automatically; the extension, userscript and MCP tests start it if it is not already running. `npm run test:demos` starts the FastAPI and Java demos when they are not already running. `npm run test:todo` starts the To-Do demo on port 8012 when needed.
 
 ### Project layout
 
@@ -339,7 +367,7 @@ public/popup.css
 public/popup.js
 mcp/                      MCP stdio server and publishable npm package
 .claude/skills/one-swagger/  Agent Skill for MCP-aware coding agents
-demos/                    live FastAPI and Java status-code APIs
+demos/                    live FastAPI/Java status-code APIs and the To-Do auth demo
 tests/api/                mock API and framework fixtures
 tests/unit/               parser, request, auth, bridge and codegen tests
 e2e/                      browser coverage and screenshot generation

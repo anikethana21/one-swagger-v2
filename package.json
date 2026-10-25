@@ -1,7 +1,7 @@
 {
   "name": "one-swagger",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.3.1",
   "type": "module",
   "description": "A fast, clean Swagger UI that can send requests. Universal OpenAPI explorer and API console.",
   "scripts": {
@@ -15,9 +15,11 @@
     "test:userscript": "node scripts/test-userscript.mjs",
     "test:mcp": "node scripts/test-mcp.mjs",
     "test:demos": "node scripts/test-demos.mjs",
+    "test:todo": "node scripts/test-todo.mjs",
     "test:surface": "npm run test:extension && npm run test:userscript && npm run test:mcp",
-    "test:all": "npm run test && npm run build && npm run build:userscript && npm run test:e2e && npm run test:extension && npm run test:userscript && npm run test:mcp",
+    "test:all": "npm run test && npm run build && npm run build:userscript && npm run test:e2e && npm run test:extension && npm run test:userscript && npm run test:mcp && npm run test:todo",
     "mcp": "node mcp/server.mjs",
+    "demo:todo": "python demos/todo/main.py",
     "build:userscript": "node scripts/build-userscript.mjs",
     "pages:build": "npm run build && npm run build:userscript && node scripts/build-pages.mjs",
     "fixtures": "node tests/api/make-fixtures.mjs",

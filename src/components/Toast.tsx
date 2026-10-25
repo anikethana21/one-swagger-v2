@@ -2,6 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import { useApp } from '../state/AppContext';
+import { appPortalTarget } from '../lib/portal';
 
 export const Toast: React.FC = () => {
   const { toast, dismissToast } = useApp();
@@ -15,6 +16,6 @@ export const Toast: React.FC = () => {
         <X size={14} />
       </button>
     </div>,
-    document.body,
+    appPortalTarget(),
   );
 };

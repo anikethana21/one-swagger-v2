@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { appPortalTarget } from '../lib/portal';
 
 interface ModalProps {
   title: React.ReactNode;
@@ -48,6 +49,6 @@ export const Modal: React.FC<ModalProps> = ({ title, subtitle, onClose, children
         {footer ? <div className="modal-foot">{footer}</div> : null}
       </div>
     </div>,
-    document.body,
+    appPortalTarget(),
   );
 };

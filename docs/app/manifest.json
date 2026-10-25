@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "One Swagger",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Read any OpenAPI spec and send requests from the same page. A clean Swagger UI with a built-in API console.",
   "permissions": ["tabs", "sidePanel", "storage"],
   "host_permissions": ["<all_urls>"],

@@ -1,11 +1,41 @@
 # Demo APIs
 
-Two small, dependency-light APIs for verifying One Swagger end to end. Both expose the same routes and the same sixteen status codes.
+Three small APIs for verifying One Swagger end to end: an authenticated To-Do
+list, plus matching FastAPI and Java status-code demos.
 
 | Demo | Docs | OpenAPI | Port |
 | --- | --- | --- | --- |
+| To-Do List Auth | <http://127.0.0.1:8012/docs> | <http://127.0.0.1:8012/openapi.json> | 8012 |
 | FastAPI | <http://127.0.0.1:8010/docs> | <http://127.0.0.1:8010/openapi.json> | 8010 |
 | Java (standard library) | <http://127.0.0.1:8011/docs> | <http://127.0.0.1:8011/openapi.json> | 8011 |
+
+## Run the To-Do API
+
+From the repository root:
+
+```bash
+python demos/todo/main.py
+# or: npm run demo:todo
+```
+
+Requires Python 3.10+ and FastAPI/Uvicorn/`python-multipart`:
+
+```bash
+python -m pip install -r demos/todo/requirements.txt
+```
+
+Accounts:
+
+| Username | Password | Role |
+| --- | --- | --- |
+| `demo` | `demo123` | user |
+| `admin` | `admin123` | administrator |
+
+Open <http://127.0.0.1:8012/docs>, start One Swagger, click **Authorize**, open
+`todoAuth`, enter `demo` / `demo123`, and click **Get token**. It supports full
+CRUD (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), filters, sorting, pagination,
+per-user authorization, an admin role, CORS and timing headers. The complete
+endpoint table is in [`todo/README.md`](todo/README.md).
 
 ## Run FastAPI
 
@@ -18,7 +48,8 @@ Requires Python 3.10+ and FastAPI/Uvicorn.
 
 ## Run Java
 
-The Java demo uses only `com.sun.net.httpserver`, so it needs no Maven or Gradle. Use JDK 17 or newer.
+The Java demo uses only `com.sun.net.httpserver`, so it needs no Maven or Gradle.
+Use JDK 17 or newer.
 
 ```bash
 javac -encoding UTF-8 -d demos/java/bin demos/java/OneSwaggerJavaDemo.java
@@ -27,7 +58,7 @@ java -cp demos/java/bin OneSwaggerJavaDemo 8011
 
 ## Status codes
 
-Both APIs support:
+Both status-code APIs support:
 
 ```text
 200  201  202  204  301
@@ -48,24 +79,28 @@ curl -i http://127.0.0.1:8011/status/503
 
 ## Verify with One Swagger
 
-1. Start one or both demos.
+1. Start the demo you want to test.
 2. Install the Tampermonkey userscript or load the Chrome extension.
 3. Open a `/docs` page. One Swagger detects the spec origin automatically.
-4. Expand `GET /status/{code}`, click **Try it out**, enter `418` (or any code above), and press **Execute**.
+4. For the To-Do API, authorize and try a full CRUD flow. For the status demos, expand `GET /status/{code}`, click **Try it out**, enter `418` (or any code above), and press **Execute**.
 
 You can also open the live spec through the MCP server without installing anything:
 
 ```bash
+node mcp/server.mjs open http://127.0.0.1:8012/openapi.json --operation "GET /todos"
 node mcp/server.mjs open http://127.0.0.1:8010/openapi.json --operation "GET /status/{code}"
 ```
 
-That opens a browser tab with the operation already expanded. Click **Try it out**, enter `418`, `422`, `503` or another code, and press **Execute**.
+That opens a browser tab with the operation already expanded.
 
 Run the automated checks with:
 
 ```bash
+npm run test:todo    # auth, authorization, CRUD, CORS, timing + userscript OAuth flow
 npm run test:demos   # live FastAPI + Java, every status code, userscript UI
 npm run test:mcp     # MCP client, local browser page, deep link and zero-CORS bridge
 ```
 
-`test:demos` verifies every status code in both languages, both OpenAPI documents, and a live `418` response through the userscript UI.
+`test:todo` starts the To-Do API on port 8012 when needed. `test:demos` verifies
+every status code in both languages, both OpenAPI documents, and a live `418`
+response through the userscript UI.
