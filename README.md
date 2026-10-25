@@ -4,7 +4,7 @@
 
 > **Published on GitHub Pages:** <https://anikethana21.github.io/one-swagger-v2/>
 >
-> [**Install the userscript**](https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js) — free, no store account or payment card. Current version: **2.2.0**.
+> [**Install the userscript**](https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js) — free, no store account or payment card. Current version: **2.3.0**.
 
 One Swagger is a drop-in replacement for the documentation *and* the request runner. Load an OpenAPI 2.0, 3.0 or 3.1 document, browse it like Swagger UI, then execute endpoints inline — with no page switching and no login. The Tampermonkey userscript adds a zero-CORS transport for localhost and APIs that do not send CORS headers. The same app is also hosted on GitHub Pages, and the optional Chrome extension adds a toolbar popup and address-bar launcher.
 
@@ -15,7 +15,7 @@ One Swagger is a drop-in replacement for the documentation *and* the request run
 Swagger UI is excellent at reading docs. Postman is excellent at sending requests. One Swagger does both in one quiet interface:
 
 - The docs page stays close to Swagger UI / `/docs`: tags, method-tinted endpoint cards, parameters, schemas and responses.
-- The **Send** button lives inside the endpoint that it calls. There is no separate collection to configure first.
+- **Try it out** works like Swagger UI: enable an operation, fill its inputs, then **Execute**. The request lives inside the endpoint that it calls, so there is no separate collection to configure first.
 - The **Request** tab is a free-form HTTP console for anything not in the spec.
 - The **Chrome extension** proxies requests through a Manifest V3 service worker, so requests are not blocked by CORS.
 
@@ -31,13 +31,15 @@ Swagger UI is excellent at reading docs. Postman is excellent at sending request
 ### Documentation
 - Tag sections, endpoint descriptions, operation metadata and Markdown.
 - Endpoint filter across paths, summaries, descriptions, operation IDs and methods.
+- Swagger UI-style **Try it out** / **Execute** / **Clear** flow, with `Cancel` to leave edit mode.
 - Parameter table for path, query, header and cookie parameters.
 - Request-body editor with content-type switching, schema view, format and reset-to-example.
-- Response documentation for every declared status.
+- Response table with Code, Description and Links columns.
+- Response media-type selector plus **Example Value** and **Schema** tabs for every declared status.
 - Server/base-URL switcher and editable base URL.
 
 ### Request execution
-- Send any documented operation inline, or use the free-form Request console.
+- Execute any documented operation inline after clicking **Try it out**, or use the free-form Request console.
 - Path, query, header and cookie parameters.
 - JSON, `application/x-www-form-urlencoded`, `multipart/form-data` (text fields) and plain-text bodies.
 - Auth: HTTP Bearer, HTTP Basic, API key (header/query/cookie), OAuth 2.0 token exchange and OpenID Connect tokens.

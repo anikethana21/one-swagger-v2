@@ -7,7 +7,7 @@ Copy and assets for the One Swagger Chrome Web Store submission.
 | Field | Value |
 | --- | --- |
 | Name | One Swagger |
-| Version | 2.2.0 |
+| Version | 2.3.0 |
 | Category | Developer Tools |
 | Language | English (United States) |
 | Homepage | https://anikethana21.github.io/one-swagger-v2/ |
@@ -29,10 +29,10 @@ Copy and assets for the One Swagger Chrome Web Store submission.
 > Load OpenAPI 3.1, 3.0 and Swagger 2.0 documents from FastAPI, Express, Spring Boot, Flask, Django REST Framework, NestJS, ASP.NET Core, Go and any other framework that produces a spec. Load by URL, drag and drop a file, or paste JSON/YAML.
 >
 > **Documentation that stays out of the way**
-> Familiar Swagger UI / FastAPI-style layout with tags, method-colored endpoint cards, parameter tables, request bodies, response schemas and an expandable schema browser. Filter endpoints instantly. Switch servers or edit the base URL.
+> Familiar Swagger UI / FastAPI-style layout with tags, method-colored endpoint cards, parameter tables, request bodies, response schemas and an expandable schema browser. Every response has a media-type selector plus Example Value and Schema tabs. Filter endpoints instantly. Switch servers or edit the base URL.
 >
 > **An API client built into the page**
-> Open an endpoint, fill in path, query and header parameters, edit the generated request body and press Send. Inspect status, latency, response size, headers and formatted JSON. Copy or download the response.
+> Open an endpoint, click Try it out, fill in path, query and header parameters, edit the generated request body and press Execute. Inspect status, latency, response size, headers and formatted JSON. Copy or download the response.
 >
 > **Request console**
 > Need something outside the spec? The Request tab is a free-form HTTP console with query parameters, headers, JSON, form, multipart text and plain-text bodies.

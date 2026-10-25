@@ -9,7 +9,7 @@ metadata:
 
 # One Swagger
 
-One Swagger is an OpenAPI explorer and API console. It looks like Swagger UI / FastAPI `/docs`, but every endpoint has a **Send** button and the browser tab gets a zero-CORS bridge.
+One Swagger is an OpenAPI explorer and API console. It looks like Swagger UI / FastAPI `/docs`, but every endpoint has a **Try it out** → **Execute** flow and the browser tab gets a zero-CORS bridge.
 
 ## When to use it
 

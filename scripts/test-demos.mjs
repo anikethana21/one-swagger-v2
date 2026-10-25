@@ -150,6 +150,7 @@ async function checkUi(browser, demo) {
     if (title !== demo.title) throw new Error(`${demo.name} UI loaded "${title}" instead of "${demo.title}".`);
 
     await page.getByTestId('operation-get-/status/{code}').click();
+    await page.getByTestId('try-it-out-get-/status/{code}').click();
     await page.getByTestId('param-path-code').fill('418');
     await page.getByTestId('send-get-/status/{code}').click();
     await page.locator('.status-pill').filter({ hasText: '418' }).waitFor({ timeout: 15000 });

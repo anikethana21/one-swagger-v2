@@ -186,11 +186,13 @@ try {
   // Execute a normal endpoint and a non-2xx endpoint from the docs view.
   await page.getByTestId('nav-docs').click();
   await page.getByTestId('operation-get-/pets').click();
+  await page.getByTestId('try-it-out-get-/pets').click();
   await page.getByTestId('send-get-/pets').click();
   await page.locator('.status-pill').filter({ hasText: '200' }).waitFor({ timeout: 15000 });
   console.log('Docs execution status: 200');
 
   await page.getByTestId('operation-get-/pets/{petId}').click();
+  await page.getByTestId('try-it-out-get-/pets/{petId}').click();
   await page.getByTestId('param-path-petId').fill('999');
   await page.getByTestId('send-get-/pets/{petId}').click();
   await page.locator('.status-pill').filter({ hasText: '404' }).waitFor({ timeout: 15000 });

@@ -13,6 +13,12 @@ async function loadSpec(page: Page, url = `${API}/specs/fastapi.json`) {
   await expect(page.getByTestId('load-error')).toHaveCount(0);
 }
 
+async function enableTryItOut(page: Page, method: string, path: string) {
+  const button = page.getByTestId(`try-it-out-${method}-${path}`);
+  await expect(button).toBeVisible();
+  await button.click();
+}
+
 test.describe('documentation', () => {
   test('loads a spec and groups endpoints by tag', async ({ page }) => {
     await loadSpec(page);
@@ -42,6 +48,13 @@ test.describe('documentation', () => {
     await loadSpec(page);
     await page.getByTestId('operation-get-/pets').click();
     await expect(page.getByText('List pets').first()).toBeVisible();
+    await expect(page.getByTestId('send-get-/pets')).toHaveCount(0);
+    await expect(page.getByTestId('response-doc-200')).toContainText('Media type');
+    await expect(page.getByTestId('response-media-200')).toHaveValue('application/json');
+    await expect(page.getByTestId('response-tab-200-example')).toHaveAttribute('aria-selected', 'true');
+    await page.getByTestId('response-tab-200-schema').click();
+    await expect(page.getByTestId('response-tab-200-schema')).toHaveAttribute('aria-selected', 'true');
+    await enableTryItOut(page, 'get', '/pets');
     await expect(page.getByTestId('send-get-/pets')).toBeEnabled();
     await page.getByTestId('send-get-/pets').click();
     await expect(page.locator('.status-pill')).toContainText('200', { timeout: 15000 });
@@ -131,6 +144,7 @@ test.describe('authorization and execution', () => {
     await expect(page.getByTestId('authorize-button')).toContainText('Authorized (1)');
 
     await page.getByTestId('operation-post-/pets').click();
+    await enableTryItOut(page, 'post', '/pets');
     await page.getByTestId('send-post-/pets').click();
     await expect(page.locator('.status-pill')).toContainText('201', { timeout: 15000 });
     await expect(page.locator('.response')).toContainText('Rex');
@@ -139,6 +153,7 @@ test.describe('authorization and execution', () => {
   test('shows the unauthorized response when no token is configured', async ({ page }) => {
     await loadSpec(page);
     await page.getByTestId('operation-post-/pets').click();
+    await enableTryItOut(page, 'post', '/pets');
     await page.getByTestId('send-post-/pets').click();
     await expect(page.locator('.status-pill')).toContainText('401', { timeout: 15000 });
   });
@@ -148,6 +163,9 @@ test.describe('authorization and execution', () => {
     await page.getByTestId('operation-get-/pets/{petId}').click();
     const petId = page.getByTestId('param-path-petId');
     await expect(petId).toBeVisible();
+    await expect(petId).toBeDisabled();
+    await enableTryItOut(page, 'get', '/pets/{petId}');
+    await expect(petId).toBeEnabled();
     await petId.fill('2');
     await page.getByTestId('send-get-/pets/{petId}').click();
     await expect(page.locator('.status-pill')).toContainText('200', { timeout: 15000 });
@@ -240,6 +258,7 @@ test.describe('theme and screenshots', () => {
     await page.screenshot({ path: 'store-assets/02-docs.png' });
 
     await page.getByTestId('operation-get-/pets').click();
+    await enableTryItOut(page, 'get', '/pets');
     await page.getByTestId('send-get-/pets').click();
     await expect(page.locator('.status-pill')).toContainText('200', { timeout: 15000 });
     await page.locator('.op-card.is-open').first().scrollIntoViewIfNeeded();
@@ -272,6 +291,7 @@ test.describe('theme and screenshots', () => {
     await page.screenshot({ path: 'screenshots/docs-light.png', fullPage: false });
 
     await page.getByTestId('operation-get-/pets').click();
+    await enableTryItOut(page, 'get', '/pets');
     await page.getByTestId('send-get-/pets').click();
     await expect(page.locator('.status-pill')).toContainText('200', { timeout: 15000 });
     await page.locator('.op-card.is-open').first().screenshot({ path: 'screenshots/operation-expanded.png' });

@@ -82,6 +82,7 @@ try {
 
   // Normal request through the extension page.
   await page.getByTestId('operation-get-/pets').click();
+  await page.getByTestId('try-it-out-get-/pets').click();
   await page.getByTestId('send-get-/pets').click();
   await page.locator('.status-pill').waitFor({ timeout: 15000 });
   console.log('Docs request status:', await page.locator('.status-pill').textContent());

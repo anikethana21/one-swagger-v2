@@ -9,6 +9,7 @@ interface RequestBodyEditorProps {
   body: ApiRequestBody;
   resolver: RefResolver;
   contentType: string;
+  readOnly?: boolean;
   onContentTypeChange: (contentType: string) => void;
   text: string;
   onTextChange: (text: string) => void;
@@ -18,6 +19,7 @@ export const RequestBodyEditor: React.FC<RequestBodyEditorProps> = ({
   body,
   resolver,
   contentType,
+  readOnly = false,
   onContentTypeChange,
   text,
   onTextChange,
@@ -59,7 +61,7 @@ export const RequestBodyEditor: React.FC<RequestBodyEditorProps> = ({
   };
 
   return (
-    <div className="request-body-editor">
+    <div className={`request-body-editor ${readOnly ? 'is-readonly' : ''}`}>
       <div className="section-head">
         <div className="section-head-title">
           <h3>Request body</h3>
@@ -69,6 +71,7 @@ export const RequestBodyEditor: React.FC<RequestBodyEditorProps> = ({
           <select
             className="input input-compact mono"
             value={mediaType}
+            disabled={readOnly}
             onChange={(event) => onContentTypeChange(event.target.value)}
             aria-label="Request content type"
             data-testid="content-type-select"
@@ -107,11 +110,11 @@ export const RequestBodyEditor: React.FC<RequestBodyEditorProps> = ({
         {tab === 'example' ? (
           <>
             {isJson ? (
-              <button type="button" className="text-btn" onClick={formatJson} title="Format JSON">
+              <button type="button" className="text-btn" onClick={formatJson} title="Format JSON" disabled={readOnly}>
                 <Braces size={12} /> Format
               </button>
             ) : null}
-            <button type="button" className="text-btn" onClick={resetExample} title="Reset to schema example">
+            <button type="button" className="text-btn" onClick={resetExample} title="Reset to schema example" disabled={readOnly}>
               <RotateCcw size={12} /> Reset
             </button>
           </>
@@ -123,6 +126,7 @@ export const RequestBodyEditor: React.FC<RequestBodyEditorProps> = ({
           <textarea
             className="input code-input body-input"
             value={text}
+            readOnly={readOnly}
             onChange={(event) => onTextChange(event.target.value)}
             placeholder={isJson ? '{\n  "key": "value"\n}' : 'Request body'}
             spellCheck={false}

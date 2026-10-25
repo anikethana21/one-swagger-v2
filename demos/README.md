@@ -51,7 +51,7 @@ curl -i http://127.0.0.1:8011/status/503
 1. Start one or both demos.
 2. Install the Tampermonkey userscript or load the Chrome extension.
 3. Open a `/docs` page. One Swagger detects the spec origin automatically.
-4. Expand `GET /status/{code}`, enter `418` (or any code above), and press **Send**.
+4. Expand `GET /status/{code}`, click **Try it out**, enter `418` (or any code above), and press **Execute**.
 
 You can also open the live spec through the MCP server without installing anything:
 
@@ -59,7 +59,7 @@ You can also open the live spec through the MCP server without installing anythi
 node mcp/server.mjs open http://127.0.0.1:8010/openapi.json --operation "GET /status/{code}"
 ```
 
-That opens a browser tab with the operation already expanded. Enter `418`, `422`, `503` or another code and press **Send**.
+That opens a browser tab with the operation already expanded. Click **Try it out**, enter `418`, `422`, `503` or another code, and press **Execute**.
 
 Run the automated checks with:
 

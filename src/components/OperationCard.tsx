@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Code2, Loader2, Lock, Send, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronRight, Code2, Loader2, Lock, Play, RotateCcw, Send, ShieldCheck } from 'lucide-react';
 import type { ApiOperation } from '../types';
 import { useApp } from '../state/AppContext';
 import {
@@ -79,6 +79,7 @@ export const OperationCard: React.FC<OperationCardProps> = ({ operation, tagName
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<Awaited<ReturnType<typeof executeRequest>> | null>(null);
   const [error, setError] = useState<ResponseError | null>(null);
+  const [tryItOut, setTryItOut] = useState(false);
 
   // Deep links such as ?operation=GET%20%2Fpets open the matching endpoint.
   useEffect(() => {
@@ -128,6 +129,34 @@ export const OperationCard: React.FC<OperationCardProps> = ({ operation, tagName
     }
     return joinBaseAndPath(baseUrl, substitutePathParams(operation.path, pathValues));
   }, [operation, values, baseUrl]);
+
+  const resetRequest = () => {
+    setValues(initialValues(operation));
+    setBodyText(initialBody.text);
+    setContentType(initialBody.contentType);
+    setResult(null);
+    setError(null);
+  };
+
+  const startTryItOut = () => {
+    setTryItOut(true);
+    setError(null);
+    const id = `op-${operation.key.replace(/[^\w-]/g, '-')}`;
+    window.setTimeout(() => {
+      const host = document.getElementById('one-swagger-userscript-host');
+      const target = document.getElementById(id) || host?.shadowRoot?.getElementById(id);
+      const firstField = target?.querySelector<HTMLElement>(
+        '[data-testid^="param-"], [data-testid="request-body-input"]',
+      );
+      firstField?.focus();
+    }, 40);
+  };
+
+  const cancelTryItOut = () => {
+    setTryItOut(false);
+    setResult(null);
+    setError(null);
+  };
 
   const buildPrepared = () => {
     if (!spec) throw new RequestBuildError('No specification is loaded.');
@@ -258,29 +287,43 @@ export const OperationCard: React.FC<OperationCardProps> = ({ operation, tagName
             </div>
           ) : null}
 
-          {hasParameters ? (
-            <div className="op-section">
-              <div className="section-head">
-                <div className="section-head-title">
-                  <h3>Parameters</h3>
-                  {missingRequired.length > 0 ? (
-                    <span className="required-badge">{missingRequired.length} required</span>
-                  ) : null}
-                </div>
+          <div className="op-section">
+            <div className="section-head">
+              <div className="section-head-title">
+                <h3>Parameters</h3>
+                {missingRequired.length > 0 ? (
+                  <span className="required-badge">{missingRequired.length} required</span>
+                ) : null}
               </div>
+              <button
+                type="button"
+                className={`btn btn-secondary btn-tryout ${tryItOut ? 'is-active' : ''}`}
+                onClick={tryItOut ? cancelTryItOut : startTryItOut}
+                aria-pressed={tryItOut}
+                title={tryItOut ? 'Leave try-it-out mode' : 'Enable request editing and execution'}
+                data-testid={`try-it-out-${operation.method}-${operation.path}`}
+              >
+                {tryItOut ? 'Cancel' : <><Play size={13} /> Try it out</>}
+              </button>
+            </div>
+            {hasParameters ? (
               <ParameterTable
                 parameters={operation.parameters}
                 values={values}
+                disabled={!tryItOut}
                 onChange={(key, value) => setValues((previous) => ({ ...previous, [key]: value }))}
               />
-            </div>
-          ) : null}
+            ) : (
+              <p className="op-empty">No parameters</p>
+            )}
+          </div>
 
           {hasBody && operation.requestBody && resolver ? (
             <div className="op-section">
               <RequestBodyEditor
                 body={operation.requestBody}
                 resolver={resolver}
+                readOnly={!tryItOut}
                 contentType={contentType}
                 onContentTypeChange={(next) => {
                   setContentType(next);
@@ -302,8 +345,6 @@ export const OperationCard: React.FC<OperationCardProps> = ({ operation, tagName
             </div>
           ) : null}
 
-          {resolver ? <ResponsesDoc responses={operation.responses} resolver={resolver} /> : null}
-
           <div className="op-actions">
             <code className="op-url" title={pathPreview}>
               {pathPreview || 'No base URL'}
@@ -312,24 +353,44 @@ export const OperationCard: React.FC<OperationCardProps> = ({ operation, tagName
             <button type="button" className="text-btn" onClick={showCode} title="Show code for this request">
               <Code2 size={14} /> Code
             </button>
-            <button
-              type="button"
-              className="btn btn-primary op-send"
-              onClick={() => void send()}
-              disabled={sending || missingRequired.length > 0}
-              title={
-                missingRequired.length > 0
-                  ? `Fill in: ${missingRequired.map((parameter) => parameter.name).join(', ')}`
-                  : 'Send request'
-              }
-              data-testid={`send-${operation.method}-${operation.path}`}
-            >
-              {sending ? <Loader2 size={15} className="spin" /> : <Send size={14} />}
-              {sending ? 'Sending' : 'Send'}
-            </button>
+            {tryItOut ? (
+              <>
+                <button
+                  type="button"
+                  className="text-btn"
+                  onClick={resetRequest}
+                  disabled={sending}
+                  title="Clear request values and response"
+                  data-testid={`clear-${operation.method}-${operation.path}`}
+                >
+                  <RotateCcw size={13} /> Clear
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary op-send"
+                  onClick={() => void send()}
+                  disabled={sending || missingRequired.length > 0}
+                  title={
+                    missingRequired.length > 0
+                      ? `Fill in: ${missingRequired.map((parameter) => parameter.name).join(', ')}`
+                      : 'Execute request'
+                  }
+                  data-testid={`send-${operation.method}-${operation.path}`}
+                >
+                  {sending ? <Loader2 size={15} className="spin" /> : <Send size={14} />}
+                  {sending ? 'Sending' : 'Execute'}
+                </button>
+              </>
+            ) : (
+              <span className="op-tryout-hint">
+                Click <strong>Try it out</strong> to enable execution.
+              </span>
+            )}
           </div>
 
           <ResponsePanel result={result} error={error} />
+
+          {resolver ? <ResponsesDoc responses={operation.responses} resolver={resolver} /> : null}
         </div>
       ) : null}
     </article>

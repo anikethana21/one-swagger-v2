@@ -5,6 +5,7 @@ import { constraintList, schemaTypeLabel } from '../lib/spec/schema';
 interface ParameterTableProps {
   parameters: ApiParameter[];
   values: Record<string, string>;
+  disabled?: boolean;
   onChange: (key: string, value: string) => void;
 }
 
@@ -20,11 +21,11 @@ function placeholderFor(parameter: ApiParameter): string {
   return 'value';
 }
 
-export const ParameterTable: React.FC<ParameterTableProps> = ({ parameters, values, onChange }) => {
+export const ParameterTable: React.FC<ParameterTableProps> = ({ parameters, values, disabled = false, onChange }) => {
   if (parameters.length === 0) return null;
 
   return (
-    <div className="table-wrap param-table-wrap">
+    <div className={`table-wrap param-table-wrap ${disabled ? 'is-readonly' : ''}`}>
       <table className="table param-table">
         <thead>
           <tr>
@@ -79,6 +80,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({ parameters, valu
                     <select
                       className="input mono"
                       value={value}
+                      disabled={disabled}
                       onChange={(event) => onChange(parameter.key, event.target.value)}
                       aria-label={`Value for ${parameter.name}`}
                       data-testid={`param-${parameter.in}-${parameter.name}`}
@@ -94,6 +96,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({ parameters, valu
                     <select
                       className="input mono"
                       value={value}
+                      disabled={disabled}
                       onChange={(event) => onChange(parameter.key, event.target.value)}
                       aria-label={`Value for ${parameter.name}`}
                       data-testid={`param-${parameter.in}-${parameter.name}`}
@@ -106,6 +109,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({ parameters, valu
                     <input
                       className="input mono"
                       value={value}
+                      disabled={disabled}
                       onChange={(event) => onChange(parameter.key, event.target.value)}
                       placeholder={placeholderFor(parameter)}
                       spellCheck={false}
