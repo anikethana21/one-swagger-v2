@@ -7,10 +7,10 @@ Copy and assets for the One Swagger Chrome Web Store submission.
 | Field | Value |
 | --- | --- |
 | Name | One Swagger |
-| Version | 2.1.0 |
+| Version | 2.2.0 |
 | Category | Developer Tools |
 | Language | English (United States) |
-| Homepage | https://github.com/anikethana21/one-swagger-v2 |
+| Homepage | https://anikethana21.github.io/one-swagger-v2/ |
 | Support | https://github.com/anikethana21/one-swagger-v2/issues |
 | Privacy policy | https://github.com/anikethana21/one-swagger-v2/blob/main/PRIVACY.md |
 | Package | `one-swagger-extension.zip` |

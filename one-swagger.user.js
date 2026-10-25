@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         One Swagger
 // @namespace    https://github.com/anikethana21/one-swagger-v2
-// @version      2.1.0
+// @version      2.2.0
 // @description  A clean Swagger UI for any OpenAPI spec, with a zero-CORS request console.
 // @author       One Swagger
 // @license      MIT
-// @homepageURL  https://github.com/anikethana21/one-swagger-v2
+// @homepageURL  https://anikethana21.github.io/one-swagger-v2/
 // @supportURL   https://github.com/anikethana21/one-swagger-v2/issues
-// @updateURL    https://raw.githubusercontent.com/anikethana21/one-swagger-v2/main/one-swagger.user.js
-// @downloadURL  https://raw.githubusercontent.com/anikethana21/one-swagger-v2/main/one-swagger.user.js
-// @icon         https://raw.githubusercontent.com/anikethana21/one-swagger-v2/main/public/icons/icon128.png
+// @updateURL    https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js
+// @downloadURL  https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js
+// @icon         https://anikethana21.github.io/one-swagger-v2/icon128.png
 // @match        *://*/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue

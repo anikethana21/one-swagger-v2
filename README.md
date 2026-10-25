@@ -2,9 +2,11 @@
 
 **Read the docs. Send the request.** A clean Swagger UI / FastAPI-style explorer for any OpenAPI document, with a full API console built into the same page.
 
-> **Free, no-account install:** [Install the One Swagger userscript](https://raw.githubusercontent.com/anikethana21/one-swagger-v2/main/one-swagger.user.js). It runs in Tampermonkey and needs no Chrome Web Store developer account, payment card or hosted backend. Current version: **2.1.0**.
+> **Published on GitHub Pages:** <https://anikethana21.github.io/one-swagger-v2/>
+>
+> [**Install the userscript**](https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js) — free, no store account or payment card. Current version: **2.2.0**.
 
-One Swagger is a drop-in replacement for the documentation *and* the request runner. Load an OpenAPI 2.0, 3.0 or 3.1 document, browse it like Swagger UI, then execute endpoints inline — with no page switching and no login. The Chrome extension and Tampermonkey userscript add a zero-CORS transport for localhost and APIs that do not send CORS headers.
+One Swagger is a drop-in replacement for the documentation *and* the request runner. Load an OpenAPI 2.0, 3.0 or 3.1 document, browse it like Swagger UI, then execute endpoints inline — with no page switching and no login. The Tampermonkey userscript adds a zero-CORS transport for localhost and APIs that do not send CORS headers. The same app is also hosted on GitHub Pages, and the optional Chrome extension adds a toolbar popup and address-bar launcher.
 
 ![One Swagger docs](screenshots/docs-light.png)
 
@@ -49,7 +51,8 @@ Swagger UI is excellent at reading docs. Postman is excellent at sending request
 
 ### Browser surfaces
 - **Chrome extension:** a toolbar popup with one-click launch, current-tab detection and a port/spec quick-open field. The full-tab app uses a Manifest V3 service worker for zero-CORS API traffic and spec loading. An `os` address-bar keyword opens a spec directly. Optional side-panel build target.
-- **Tampermonkey userscript (free, no-account path):** injects the same app into a shadow root on any page. `GM_xmlhttpRequest` provides the zero-CORS transport, and specs are auto-detected on Swagger UI / FastAPI `/docs` pages. Install directly from the raw GitHub file; no store review, developer account or payment card is needed.
+- **Tampermonkey userscript (free, no-account path):** injects the same app into a shadow root on any page. `GM_xmlhttpRequest` provides the zero-CORS transport, and specs are auto-detected on Swagger UI / FastAPI `/docs` pages. Install directly from GitHub Pages; no store review, developer account or payment card is needed.
+- **Hosted web app:** the production build is published at <https://anikethana21.github.io/one-swagger-v2/app/>. It is useful for browsing public specs without installing anything, but requests still follow the API's CORS policy unless the userscript or extension is active.
 - **MCP for AI agents:** a local server opens a normal browser tab with One Swagger, deep-links an operation, and injects the same zero-CORS bridge. No extension or userscript is needed in this mode.
 - No remote code, analytics or external service. Requests go only to the URL you choose.
 
@@ -75,15 +78,38 @@ Open the URL printed by Vite (normally `http://127.0.0.1:5173`) and enter a spec
 This is the install path that does not need a Chrome Web Store developer account or a payment card.
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
-2. Open the userscript install URL and click **Install**:
+2. Open the GitHub Pages install URL and click **Install**:
 
-   <https://raw.githubusercontent.com/anikethana21/one-swagger-v2/main/one-swagger.user.js>
+   <https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js>
 
 3. Start the two demo APIs below in separate terminals.
 4. Open <http://127.0.0.1:8010/docs> or <http://127.0.0.1:8011/docs>, then click the floating **One Swagger** button or press **Alt+Shift+S**. The spec is detected automatically.
 5. Try `GET /status/{code}` with `418`, or `GET /items`.
 
 The userscript is self-contained: the React app, styles and OpenAPI engine are inside `one-swagger.user.js`. It does not need the extension, a hosted backend or a store listing.
+
+Raw GitHub mirror, if you prefer it:
+
+<https://raw.githubusercontent.com/anikethana21/one-swagger-v2/main/one-swagger.user.js>
+
+### GitHub Pages
+
+GitHub Pages is the primary published distribution:
+
+| Surface | URL |
+| --- | --- |
+| Landing and install page | <https://anikethana21.github.io/one-swagger-v2/> |
+| Userscript | <https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js> |
+| Hosted web app | <https://anikethana21.github.io/one-swagger-v2/app/> |
+| Icon | <https://anikethana21.github.io/one-swagger-v2/icon128.png> |
+
+The site is generated into `docs/` from the landing page in `site/`, the production build in `dist/` and `one-swagger.user.js`:
+
+```bash
+npm run pages:build
+```
+
+Commit the regenerated `docs/` folder and push. GitHub Pages serves `main` → `/docs`; no Actions workflow, store account or payment card is required. The `docs/` folder is generated — do not edit it by hand.
 
 ### Production build
 
@@ -147,14 +173,14 @@ The five 1280×800 screenshots are generated by the Playwright suite. The 440×2
 
 The userscript is a single self-contained file: the React app, styles and OpenAPI engine are all inside it. It does not need the extension or a hosted web app.
 
-This raw GitHub URL is the published userscript distribution. It is updated on every push, and the `@updateURL` / `@downloadURL` headers let Tampermonkey update it in place. No store account, review or payment card is involved.
+GitHub Pages is the published userscript distribution. The `@updateURL` and `@downloadURL` headers point at the Pages copy, so Tampermonkey updates it in place after each Pages build. The raw GitHub file remains available as a mirror. No store account, review or payment card is involved.
 
 ![One Swagger userscript](screenshots/userscript-java.png)
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) in Chrome, Edge, Firefox or Safari.
 2. Open the install URL:
 
-   <https://raw.githubusercontent.com/anikethana21/one-swagger-v2/main/one-swagger.user.js>
+   <https://anikethana21.github.io/one-swagger-v2/one-swagger.user.js>
 
 3. Tampermonkey shows the install screen. Click **Install**.
 4. Open an API docs page, or any page where you want to test an API. Click the floating **One Swagger** button in the bottom-right corner, or press **Alt+Shift+S**.
@@ -282,6 +308,7 @@ npm run test:demos       # FastAPI and Java demo APIs + userscript UI
 npm run mcp              # Start the MCP stdio server from this checkout
 npm run package:mcp      # Build the publishable one-swagger-mcp package
 npm run build:userscript # Generate one-swagger.user.js
+npm run pages:build      # Build dist/ + userscript and assemble docs/ for GitHub Pages
 npm run test:all         # unit + web/userscript builds + e2e + extension + userscript + MCP
 npm run fixtures         # Regenerate framework fixtures
 ```
@@ -314,6 +341,8 @@ demos/                    live FastAPI and Java status-code APIs
 tests/api/                mock API and framework fixtures
 tests/unit/               parser, request, auth, bridge and codegen tests
 e2e/                      browser coverage and screenshot generation
+site/                     GitHub Pages landing page (source)
+docs/                     generated GitHub Pages site (landing, app/, userscript)
 scripts/                  extension/userscript/MCP/demo smoke tests, packaging, assets
 one-swagger.user.js       generated Tampermonkey bundle
 ```
